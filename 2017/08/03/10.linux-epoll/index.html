@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="0x01.网络IO模型前言Linux由林纳斯·托瓦兹在1991年10月5日首次发布。系统使用宏内核负责处理进程控制、网络，以及外围设备和文件系统的访问。作为目前非常主流的服务端操作系统，它是如何应对海量的网络IO，并且高效的处理的?接下来我们从网络模型和内核IO调度等方面来剖析！ 两大IO模型概念为什么我们要从网络IO模型开始说起，因为网络IO的本质其实是Socket的读写。当海量的请求到达服务器">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Linux内核如何高效处理海量网络IO?">
+<meta property="og:url" content="http://www.antwhy.com/2017/08/03/10.linux-epoll/index.html">
+<meta property="og:site_name" content="AntWhy">
+<meta property="og:description" content="0x01.网络IO模型前言Linux由林纳斯·托瓦兹在1991年10月5日首次发布。系统使用宏内核负责处理进程控制、网络，以及外围设备和文件系统的访问。作为目前非常主流的服务端操作系统，它是如何应对海量的网络IO，并且高效的处理的?接下来我们从网络模型和内核IO调度等方面来剖析！ 两大IO模型概念为什么我们要从网络IO模型开始说起，因为网络IO的本质其实是Socket的读写。当海量的请求到达服务器">
+<meta property="og:locale">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/2j0R2O0D3T0Q14462J0Z/QQ20180310-172030.png?v=b9ba721d">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/3X0U1r1z0I3t3I3l1E2R/QQ20180310-174231.png?v=cdbe0fb3">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/2l191a1z0v0y3H1n161B/QQ20180310-181716.png?v=18a2e4ef">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/0t1a3b0l1C2d1z171b1l/QQ20180311-103608.png?v=c4dd4a35">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/2c1p1T153t331B3C071T/QQ20180311-105718.png?v=2bf8d860">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/2X0i3H3v0u3a3w2o380X/QQ20180315-222901.png?v=b8920eeb">
+<meta property="article:published_time" content="2017-08-03T10:30:15.000Z">
+<meta property="article:modified_time" content="2018-03-19T13:06:32.000Z">
+<meta property="article:author" content="liyan">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://d2ffutrenqvap3.cloudfront.net/items/2j0R2O0D3T0Q14462J0Z/QQ20180310-172030.png?v=b9ba721d">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.antwhy.com/2017/08/03/10.linux-epoll/"/>
+
+
+
+
+
+  <title>Linux内核如何高效处理海量网络IO? | AntWhy</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AntWhy</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Server Engineer</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.antwhy.com/2017/08/03/10.linux-epoll/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AntWhy">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Linux内核如何高效处理海量网络IO?</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-08-03T18:30:15+08:00">
+                2017-08-03
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="0x01-网络IO模型"><a href="#0x01-网络IO模型" class="headerlink" title="0x01.网络IO模型"></a><span style="color:#436EEE;font-size:24px">0x01.网络IO模型</span></h1><h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a><span style="color:#436EEE;font-size:20px">前言</span></h2><p><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/zh-cn/Linux">Linux</a>由<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E6%9E%97%E7%BA%B3%E6%96%AF%C2%B7%E6%89%98%E7%93%A6%E5%85%B9">林纳斯·托瓦兹</a>在1991年10月5日首次发布。系统使用<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E6%95%B4%E5%A1%8A%E6%80%A7%E6%A0%B8%E5%BF%83">宏内核</a>负责处理进程控制、网络，以及外围设备和文件系统的访问。作为目前非常主流的<span style="color:#EE3B3B;font-size:16px">服务端</span>操作系统，它是如何应对海量的网络IO，并且高效的处理的?接下来我们从<span style="color:#EE2C2C;font-size:16px">网络模型</span>和<span style="color:#EE2C2C;font-size:16px">内核IO调度</span>等方面来剖析！</p>
+<h2 id="两大IO模型"><a href="#两大IO模型" class="headerlink" title="两大IO模型"></a><span style="color:#436EEE;font-size:20px">两大IO模型</span></h2><h3 id="概念"><a href="#概念" class="headerlink" title="概念"></a><span style="color:#436EEE;font-size:18px">概念</span></h3><p>为什么我们要从网络IO模型开始说起，因为网络IO的本质其实是Socket的读写。当<span style="color:#63B8FF;font-size:16px">海量的请求到达服务器时，服务器如何高效的处理这些请求</span>，我们需要一种高效处理的逻辑。这正是网络IO模型的作用之处，它是一种高效处理的逻辑，正是由于思想才锻造了内核处理海量IO并发的高效。<br>网络IO模型目前可以分为两大类<span style="color:#FF8C00;font-size:16px">同步模型</span>、<span style="color:#FF8C00;font-size:16px">异步模型</span>，两大模型下面又有各种的小分类。<strong>同步模型</strong>包括<span style="color:#9BE95A;font-size:16px">阻塞IO(Blocking IO)、非阻塞IO(Non-blocking IO)、多路复用IO(multiplexing IO)、信号驱动式IO(Signal-driven IO)</span>。<strong>异步模型</strong>包括<span style="color:#9BE95A;font-size:16px">异步IO(Asynchronous IO)</span>。下面我们解释这5种IO模型是如何工作的。</p>
+<h3 id="名词"><a href="#名词" class="headerlink" title="名词"></a><span style="color:#436EEE;font-size:18px">名词</span></h3><p>首先我们先了解几个概念的词汇，待会解释IO模型是会用到。</p>
+<p><span style="color:#E066FF;font-size:17px">文件描述符(file descriptor)简称fd</span><br>文件描述符在形式上是一个非负整数。实际上，它是一个索引值，指向内核为每一个进程所维护的该进程打开文件的记录表。当程序打开一个现有文件或者创建一个新文件时，内核向进程返回一个文件描述符。在程序设计中，一些涉及底层的程序编写往往会围绕着文件描述符展开。但是文件描述符这一概念往往只适用于UNIX、Linux这样的操作系统。<span style="color:#63B8FF;font-size:16px">当与服务端建立一个socket链接时，在socket上收发数据，相当于对一个文件进行读写，所以一个socket句柄，通常也用fd来表示</span>。</p>
+<p><span style="color:#E066FF;font-size:17px">用户空间和内核空间</span><br>Linux操作系统和驱动程序运行在<a target="_blank" rel="noopener" href="https://www.cnblogs.com/wuchanming/p/4360277.html">内核空间</a>，应用程序运行在用户空间，两者不能简单地使用指针传递数据。操作系统的核心是内核，独立于普通的应用程序，可以访问受保护的内存空间，也有访问底层硬件设备的所有权限。为了保证用户进程不能直接操作内核（kernel），保证内核的安全，操心系统将虚拟空间划分为两部分，一部分为内核空间，一部分为用户空间，供各个进程使用。</p>
+<p><span style="color:#E066FF;font-size:17px">系统内核用户态和内核态</span><br>因为操作系统的资源是有限的，如果访问资源的操作过多，必然会消耗过多的资源，而且如果不对这些操作加以区分，很可能造成资源访问的冲突。所以，为了减少有限资源的访问和使用冲突，<span style="color:#63B8FF;font-size:16px">Unix&#x2F;Linux的设计哲学之一就是：对不同的操作赋予不同的执行等级，就是所谓特权的概念</span>。简单说就是有多大能力做多大的事，与系统相关的一些特别关键的操作必须由最高特权的程序来完成。Intel的X86架构的CPU提供了0到3四个特权级，数字越小，特权越高，Linux操作系统中主要采用了0和3两个特权级，分别对应的就是内核态和用户态。运行于用户态的进程可以执行的操作和访问的资源都会受到极大的限制，而运行在<a target="_blank" rel="noopener" href="https://www.cnblogs.com/bakari/p/5520860.html">内核态</a>的进程则可以执行任何操作并且在资源的使用上没有限制。很多程序开始时运行于用户态，但在执行的过程中，一些操作需要在内核权限下才能执行，这就涉及到一个从用户态切换到内核态的过程。比如C函数库中的内存分配函数malloc()，它具体是使用sbrk()系统调用来分配内存，当malloc调用sbrk()的时候就涉及一次从用户态到内核态的切换，类似的函数还有printf()，调用的是wirte()系统调用来输出字符串，等等。<span style="color:#63B8FF;font-size:16px">用户态和内核态之间的切换也会消耗大量资源</span>。</p>
+<h3 id="详解"><a href="#详解" class="headerlink" title="详解"></a><span style="color:#436EEE;font-size:18px">详解</span></h3><p>我们先从同步模型开始介绍<br><span style="color:#EE3B3B;font-size:16px"><strong>1.阻塞IO(Blocking IO)</strong></span><br><img src="https://d2ffutrenqvap3.cloudfront.net/items/2j0R2O0D3T0Q14462J0Z/QQ20180310-172030.png?v=b9ba721d"><br>应用进程调用系统函数recvfrom()从内核请求数据，内核如果没有数据将等待，直到网卡传递数据过来，内核开始将数据准备，数据准备完成后将数据从内核中拷贝到用户空间，这段时间用户进程处于阻塞状态。<span style="color:#63B8FF;font-size:16px">这种模式可以看出数据能够及时的返回，但是应用程序进程被阻塞了</span>。</p>
+<p><span style="color:#EE3B3B;font-size:16px"><strong>2.非阻塞IO(Non-blocking IO）</strong></span><br><img src="https://d2ffutrenqvap3.cloudfront.net/items/3X0U1r1z0I3t3I3l1E2R/QQ20180310-174231.png?v=cdbe0fb3"><br>非阻塞IO中应用程序一直在轮询内核中是否有数据，直到内核缓冲区出现数据，然后等待数据从内核拷贝到用户空间，然后返回成功提示。<span style="color:#63B8FF;font-size:16px">该模式下应用进程是在轮询时是不阻塞的，但是数据复制的这段时间是阻塞的，而且该模式大量降低数据吞吐量</span>，所以和阻塞模型中就出现了著名的<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/C10k_problem">C10K</a>问题(<span style="color:#C1C1C1;font-size:16px">处于此处的两个模型下内核当请求达到10k时，因为应用程序需要10k的线程进行处理，假设１个线程需要１Ｍ内存，10K的线程需要10G的内存，这在当时32位的操作系统来说完全不可能，因为32位的操作系统架构下，内存最多$２^{32}$，所以当时没法处理这种请求</span>)。</p>
+<p><span style="color:#EE3B3B;font-size:16px"><strong>3.多路复用IO(Multiplexing IO）</strong></span><br><img src="https://d2ffutrenqvap3.cloudfront.net/items/2l191a1z0v0y3H1n161B/QQ20180310-181716.png?v=18a2e4ef"><br>IO多路复用模型相对其他模型来说就高效多了，应用程序再也不用自己轮询或者等待内核数据，只需要把全量fd注册到select&#x2F;poll中，然后让select&#x2F;poll轮询内核中有哪些fd已经准备好数据，将准备好数据的fd数组返回。应用程序接受到数据后，相应的fd调用recvfrom()从内核高速缓存区将数据拷贝到应用缓存区。<span style="color:#63B8FF;font-size:16px">select&#x2F;poll的原理就是遍历所有的fd的完成状态，当某个fd有数据到达时添加到可读数组，遍历完成后返回可读fd数组，通知应用程序来处理</span>。这种看似非常优秀的设计也存在一定的问题。当fd数量巨大，十万、百万级别时，因为cpu将大量的fd从用户态复制到内核态进行遍历，将非常耗时，而且浪费系统资源。再复杂的问题都有解决方案，这时epoll模型(属于IO多路复用)就应运而生，这也是目前linux系统最为成熟的内核方案。这里不做赘述，后面我们将详细讲解。</p>
+<p><span style="color:#EE3B3B;font-size:16px"><strong>4.信号驱动式IO(signal-driven IO)</strong></span><br><img src="https://d2ffutrenqvap3.cloudfront.net/items/0t1a3b0l1C2d1z171b1l/QQ20180311-103608.png?v=c4dd4a35"><br>信号IO模型，应用程序先到内核中注册一个sigio，当内核中有数据到到达，内核将回调信号通知应用程序。应用程序接到信号，调用recvfrom()进行数据接收。整个过程中信号建立到信号返回过程程序是不阻塞的，数据从内核中拷贝到用户空间时程序阻塞。</p>
+<p><span style="color:#EE3B3B;font-size:16px"><strong>5.异步IO(Asynchronous IO)</strong></span><br><img src="https://d2ffutrenqvap3.cloudfront.net/items/2c1p1T153t331B3C071T/QQ20180311-105718.png?v=2bf8d860"><br>异步IO模型，应用程序调用aio_read()，将描述文件符、缓冲区指针、缓冲区大小和文件偏移(aiocbp-&gt;aio_offset)传递给内核，内核操作完成将通知应用程序。该过程应用程序不阻塞。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">aio_read</span><span class="params">(<span class="keyword">struct</span> aiocb *paiocb)</span>;</span><br><span class="line"></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">aiocb</span></span></span><br><span class="line"><span class="class">&#123;</span></span><br><span class="line">    <span class="comment">//要异步操作的文件描述符</span></span><br><span class="line">    <span class="type">int</span> aio_fildes;</span><br><span class="line">    <span class="comment">//用于lio操作时选择操作何种异步I/O类型</span></span><br><span class="line">    <span class="type">int</span> aio_lio_opcode;</span><br><span class="line">    <span class="comment">//异步读或写的缓冲区的缓冲区</span></span><br><span class="line">    <span class="keyword">volatile</span> <span class="type">void</span> *aio_buf;</span><br><span class="line">    <span class="comment">//异步读或写的字节数</span></span><br><span class="line">    <span class="type">size_t</span> aio_nbytes;</span><br><span class="line">    <span class="comment">//异步通知的结构体</span></span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">sigevent</span> <span class="title">aio_sigevent</span>;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>同步IO模型其实都是阻塞的。从第一种阻塞IO开始到信号驱动IO，优化的是准备数据前的过程，但是从内核复制数据到用户空间这个过程IO还是阻塞的。异步IO模型中内核通过让应用程序注册缓存区指针方式，当数据准备完成，直接从内核拷贝到指定的用户空间，然后再通知应用程序，这样就能使应用程序一直处于非阻塞状态。当然并非异步IO模型就一定优于同步IO模型，目前linux上AIO模型并不是非常成熟（<span style="color:#C1C1C1;font-size:16px">异步模型比较成熟的可以参考windows下的<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Input/output_completion_port">IOCP</a></span>），<span style="color:#63B8FF;font-size:16px">同步模型epoll是目前linux上较为成熟的IO模型，高并发请求下表现良好</span>。<br>linux能高效处理海量IO，也是由于高效的IO策略，但具体这些IO策略中有哪些可以学习的地方，我们继续来探寻目前比较成熟的epoll&#x2F;aio模型的相关机制，了解下AIO模型。</p>
+<h1 id="0x02-Epoll、Aio"><a href="#0x02-Epoll、Aio" class="headerlink" title="0x02.Epoll、Aio"></a><span style="color:#436EEE;font-size:24px">0x02.Epoll、Aio</span></h1><h2 id="Epoll"><a href="#Epoll" class="headerlink" title="Epoll"></a><span style="color:#436EEE;font-size:20px">Epoll</span></h2><p>于Linux 2.5.44首度登场的epoll是Linux内核的可扩展I&#x2F;O事件通知机制[1]。它设计目的旨在取代既有POSIX select(2)与poll(2)系统函数，让需要大量操作文件描述符的程序得以发挥更优异的性能(举例来说：旧有的系统函数所花费的时间复杂度为O(n)，epoll的时间复杂度O(log n))。epoll与FreeBSD的kqueue类似，底层都是由可配置的操作系统内核对象建构而成，并以文件描述符(file descriptor)的形式呈现于用户空间。</p>
+<h3 id="关键方法"><a href="#关键方法" class="headerlink" title="关键方法"></a><span style="color:#436EEE;font-size:18px">关键方法</span></h3><p>关于epoll,有三个关键方法我们先来了解下<br><span style="color:#E066FF;font-size:17px">1.int epoll_create(int size)</span><br>创建一个epoll句柄，size用来告诉内核这个监听的最大值(<span style="color:#C1C1C1;font-size:16px">当size并非限制最大值，应该算一个初始最大值</span>)，epoll创建会占用一个fd值，在使用完epoll后必须关闭，不然会造成fd泄露。</p>
+<p><span style="color:#E066FF;font-size:17px">2. int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)</span><br>epfd :　epoll_create的返回值。<br>op : op操作，添加EPOLL_CTL_ADD，删除EPOLL_CTL_DEL，修改EPOLL_CTL_MOD。分别添加、删除和修改对fd的监听事件。<br>fd : 需要监听的文件描述符。<br>epoll_event :　epoll监听的事件。</p>
+<p><span style="color:#E066FF;font-size:17px">3. int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout)</span><br>等待epfd上的io事件，最多返回maxevents个事件。<br>参数events用来从内核得到事件的集合，maxevents告之内核这个events有多大，这个maxevents的值不能大于创建epoll_create()时的size，参数timeout是超时时间（毫秒，0会立即返回，-1将不确定，也有说法说是永久阻塞）。该函数返回需要处理的事件数目，如返回0表示已超时。</p>
+<h3 id="图解"><a href="#图解" class="headerlink" title="图解"></a><span style="color:#436EEE;font-size:18px">图解</span></h3><p><img src="https://d2ffutrenqvap3.cloudfront.net/items/2X0i3H3v0u3a3w2o380X/QQ20180315-222901.png?v=b8920eeb"><br>上图是根据epoll的模型绘制的结构图，我们根据这个图来详细了解下epoll的高效。</p>
+<h3 id="结构体代码"><a href="#结构体代码" class="headerlink" title="结构体代码"></a><span style="color:#436EEE;font-size:18px">结构体代码</span></h3><p>epoll_create会在linux内核会创建一个<a target="_blank" rel="noopener" href="https://github.com/tinganho/linux-kernel/blob/master/fs/eventpoll.c">eventpoll</a>结构体</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">eventpoll</span> &#123;</span></span><br><span class="line">	<span class="comment">/* Protect the access to this structure */</span></span><br><span class="line">	<span class="type">spinlock_t</span> lock;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	 * This mutex is used to ensure that files are not removed</span></span><br><span class="line"><span class="comment">	 * while epoll is using them. This is held during the event</span></span><br><span class="line"><span class="comment">	 * collection loop, the file cleanup path, the epoll file exit</span></span><br><span class="line"><span class="comment">	 * code and the ctl operations.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">mutex</span> <span class="title">mtx</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* Wait queue used by sys_epoll_wait() */</span></span><br><span class="line">	<span class="type">wait_queue_head_t</span> wq;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* Wait queue used by file-&gt;poll() */</span></span><br><span class="line">	<span class="type">wait_queue_head_t</span> poll_wait;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* List of ready file descriptors </span></span><br><span class="line"><span class="comment">	双链表中则存放着将要通过epoll_wait返回给用户的满足条件的事件*/</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">list_head</span> <span class="title">rdllist</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* RB tree root used to store monitored fd structs </span></span><br><span class="line"><span class="comment">	红黑树的根节点，树中存储着所有添加到epoll中的需要监控的事件*/</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rb_root</span> <span class="title">rbr</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	 * This is a single linked list that chains all the &quot;struct epitem&quot; that</span></span><br><span class="line"><span class="comment">	 * happened while transferring ready events to userspace w/out</span></span><br><span class="line"><span class="comment">	 * holding -&gt;lock.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">epitem</span> *<span class="title">ovflist</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* The user that created the eventpoll descriptor */</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">user_struct</span> *<span class="title">user</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">file</span> *<span class="title">file</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* used to optimize loop detection check */</span></span><br><span class="line">	<span class="type">int</span> visited;</span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">list_head</span> <span class="title">visited_list_link</span>;</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<p>每个epoll对象都有一个独立的eventpoll结构体，结构体中存放通过epoll_ctl向epoll对象中添加文件描述符(fd)，fd位于<span style="color:#CD0000;font-size:16px">红黑树</span>中，红黑树的插入时间效率是$lgn$。所有<span style="color:#B23AEE;font-size:16px">添加到epoll中的fd都会与网卡驱动程序建立回调关系</span>。当IO事件发生时，这个回调方法会在内核中调用ep_poll_callback，改函数将fd添加到rdlist<span style="color:#CD0000;font-size:16px">双链表</span>中。</p>
+<p>在epoll对象中，每个fd都会对应建立一个epitem结构体</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * Each file descriptor added to the eventpoll interface will</span></span><br><span class="line"><span class="comment"> * have an entry of this type linked to the &quot;rbr&quot; RB tree.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">epitem</span> &#123;</span></span><br><span class="line">	<span class="comment">/* RB tree node used to link this structure to the eventpoll RB tree </span></span><br><span class="line"><span class="comment">	红黑树节点*/</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">rb_node</span> <span class="title">rbn</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* List header used to link this structure to the eventpoll ready list </span></span><br><span class="line"><span class="comment">	双向链表节点*/</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">list_head</span> <span class="title">rdllink</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/*</span></span><br><span class="line"><span class="comment">	 * Works together &quot;struct eventpoll&quot;-&gt;ovflist in keeping the</span></span><br><span class="line"><span class="comment">	 * single linked chain of items.</span></span><br><span class="line"><span class="comment">	 */</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">epitem</span> *<span class="title">next</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* The file descriptor information this item refers to </span></span><br><span class="line"><span class="comment">	事件句柄信息*/</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">epoll_filefd</span> <span class="title">ffd</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* Number of active wait queue attached to poll operations */</span></span><br><span class="line">	<span class="type">int</span> nwait;</span><br><span class="line"></span><br><span class="line">	<span class="comment">/* List containing poll wait queues */</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">list_head</span> <span class="title">pwqlist</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* The &quot;container&quot; of this item </span></span><br><span class="line"><span class="comment">	指向其所属的eventpoll对象*/</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">eventpoll</span> *<span class="title">ep</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* List header used to link this item to the &quot;struct file&quot; items list */</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">list_head</span> <span class="title">fllink</span>;</span></span><br><span class="line"></span><br><span class="line">	<span class="comment">/* The structure that describe the interested events and the source fd </span></span><br><span class="line"><span class="comment">	期待发生的事件类型*/</span></span><br><span class="line">	<span class="class"><span class="keyword">struct</span> <span class="title">epoll_event</span> <span class="title">event</span>;</span></span><br></pre></td></tr></table></figure>
+<p>epitem结构体中rbn是记录红黑树的节点，rdllink是记录双向链表的节点。</p>
+<h3 id="ET-amp-LT"><a href="#ET-amp-LT" class="headerlink" title="ET&amp;LT"></a><span style="color:#436EEE;font-size:18px">ET&amp;LT</span></h3><p>epoll_wait返回句柄操作中，有两种模式。一种模式为<span style="color:#7B68EE;font-size:16px">LT(Level Triggered 水平触发)、ET(Edge Triggered 边缘触发)</span><br><span style="color:#CD0000;font-size:16px">LT(Level Triggered 水平触发)</span><br>accept一个连接，添加到epoll中监听EPOLLIN事件，当EPOLLIN事件到达时，read fd中的数据并处理，当需要写出数据时，把数据write到fd中；如果数据较大，无法一次性写出，那么在epoll中监听EPOLLOUT事件，当EPOLLOUT事件到达时，继续把数据write到fd中；如果数据写出完毕，那么在epoll中关闭EPOLLOUT事件。<br>socket接收缓冲区不为空 有数据可读 读事件一直触发，socket发送缓冲区不满 可以继续写入数据 写事件一直触发，epoll_wait返回的事件就是socket的状态。</p>
+<p><span style="color:#CD0000;font-size:16px">ET(Edge Triggered 边缘触发)</span><br>accept一个一个连接，添加到epoll中监听EPOLLIN|EPOLLOUT事件，当EPOLLIN事件到达时，read fd中的数据并处理，read需要一直读，直到返回EAGAIN为止，当需要写出数据时，把数据write到fd中，直到数据全部写完，或者write返回EAGAIN 当EPOLLOUT事件到达时，继续把数据write到fd中，直到数据全部写完，或者write返回EAGAIN。<br>socket的接收缓冲区状态变化时触发读事件，即空的接收缓冲区刚接收到数据时触发读事件，socket的发送缓冲区状态变化时触发写事件，即满的缓冲区刚空出空间时触发读事件，仅在状态变化时触发事件。</p>
+<p><span style="color:#00F5FF;font-size:16px">使用ET模式，特定场景下会比LT更快</span>，因为它可以便捷的处理EPOLLOUT事件，省去打开与关闭EPOLLOUT的epoll_ctl（EPOLL_CTL_MOD）调用。从而有可能让你的性能得到一定的提升。例如你需要写出1M的数据，写出到socket 256k时，返回了EAGAIN，ET模式下，当再次epoll返回EPOLLOUT事件时，继续写出待写出的数据，当没有数据需要写出时，不处理直接略过即可。而LT模式则需要先打开EPOLLOUT，当没有数据需要写出时，再关闭EPOLLOUT（否则会一直返回EPOLLOUT事件）总体来说，<span style="color:#00F5FF;font-size:16px">ET处理EPOLLOUT方便高效些，LT不容易遗漏事件、不易产生bug。</span>如果server的响应通常较小，不会触发EPOLLOUT，那么适合使用LT，例如redis等。而nginx作为高性能的通用服务器，网络流量可以跑满达到1G，这种情况下很容易触发EPOLLOUT，则使用ET。关于某些场景下ET模式比LT模式效率更好</p>
+<h3 id="高效总结"><a href="#高效总结" class="headerlink" title="高效总结"></a><span style="color:#436EEE;font-size:18px">高效总结</span></h3><p>epoll相较之前的select、opll<span style="color:#B23AEE;font-size:16px">不需要将socket句柄(fd)反复传递给内核</span>，epoll数据结构中<span style="color:#B23AEE;font-size:16px">红黑树</span>持有所有的socket句柄(fd)，并且能高效进行增删查，当有数据进来并从网卡中负责到内核后，将对应的socket句柄(fd)添加<span style="color:#B23AEE;font-size:16px">双链表</span>中，然后应用程序根据双链表中socket句柄(fd)进行对应的IO数据读取。</p>
+<h1 id="0x01-参考链接"><a href="#0x01-参考链接" class="headerlink" title="0x01.参考链接 "></a><span style="color:#436EEE;font-size:24px">0x01.参考链接 </span></h1><p><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/C10k_problem">1. https://en.wikipedia.org/wiki/C10k_problem</a><br><a target="_blank" rel="noopener" href="http://blog.csdn.net/suifeng3051/article/details/52779886">2. http://blog.csdn.net/suifeng3051/article/details/52779886</a><br><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/zh-cn/Linux">3. https://zh.wikipedia.org/zh-cn/Linux</a><br><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E6%9E%97%E7%BA%B3%E6%96%AF%C2%B7%E6%89%98%E7%93%A6%E5%85%B9">4. https://zh.wikipedia.org/wiki/%E6%9E%97%E7%BA%B3%E6%96%AF%C2%B7%E6%89%98%E7%93%A6%E5%85%B9</a><br><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6">5. https://zh.wikipedia.org/wiki/%E6%96%87%E4%BB%B6%E6%8F%8F%E8%BF%B0%E7%AC%A6</a><br><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000003063859">6. https://segmentfault.com/a/1190000003063859</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/wuchanming/p/4360277.html">7. https://www.cnblogs.com/wuchanming/p/4360277.html</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/bakari/p/5520860.html">8. https://www.cnblogs.com/bakari/p/5520860.html</a><br><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Input/output_completion_port">9. https://en.wikipedia.org/wiki/Input/output_completion_port</a><br><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000007355931#articleHeader8">10. https://segmentfault.com/a/1190000007355931#articleHeader8</a><br><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Asynchronous_I/O">11. https://en.wikipedia.org/wiki/Asynchronous_I&#x2F;O</a><br><a target="_blank" rel="noopener" href="http://blog.sina.com.cn/s/blog_4c8c58ce0102vkbo.html">12. http://blog.sina.com.cn/s/blog_4c8c58ce0102vkbo.html</a><br><a target="_blank" rel="noopener" href="https://www.safaribooksonline.com/library/view/linux-system-programming/0596009585/ch04s02.html">13. https://www.safaribooksonline.com/library/view/linux-system-programming/0596009585/ch04s02.html</a><br><a target="_blank" rel="noopener" href="http://www.cnblogs.com/charlesblc/p/5521086.html">14. http://www.cnblogs.com/charlesblc/p/5521086.html</a><br><a target="_blank" rel="noopener" href="https://github.com/yedf/handy/blob/master/raw-examples/epoll-et.cc">15. https://github.com/yedf/handy/blob/master/raw-examples/epoll-et.cc</a><br><a target="_blank" rel="noopener" href="https://github.com/yedf/handy/blob/master/raw-examples/epoll.cc">16. https://github.com/yedf/handy/blob/master/raw-examples/epoll.cc</a><br><a target="_blank" rel="noopener" href="https://segmentfault.com/a/1190000004597522">17. https://segmentfault.com/a/1190000004597522</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/06/22/8.mybatis-analyze/" rel="next" title="mybatis浅析">
+                <i class="fa fa-chevron-left"></i> mybatis浅析
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/01/05/11.im-architecture/" rel="prev" title="从无到有构造DAU千万级别IM服务">
+                从无到有构造DAU千万级别IM服务 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">标签</span>
+                
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#0x01-%E7%BD%91%E7%BB%9CIO%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.</span> <span class="nav-text">0x01.网络IO模型</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%89%8D%E8%A8%80"><span class="nav-number">1.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%B8%A4%E5%A4%A7IO%E6%A8%A1%E5%9E%8B"><span class="nav-number">1.2.</span> <span class="nav-text">两大IO模型</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%A6%82%E5%BF%B5"><span class="nav-number">1.2.1.</span> <span class="nav-text">概念</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%90%8D%E8%AF%8D"><span class="nav-number">1.2.2.</span> <span class="nav-text">名词</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%AF%A6%E8%A7%A3"><span class="nav-number">1.2.3.</span> <span class="nav-text">详解</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x02-Epoll%E3%80%81Aio"><span class="nav-number">2.</span> <span class="nav-text">0x02.Epoll、Aio</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#Epoll"><span class="nav-number">2.1.</span> <span class="nav-text">Epoll</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E6%96%B9%E6%B3%95"><span class="nav-number">2.1.1.</span> <span class="nav-text">关键方法</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%9B%BE%E8%A7%A3"><span class="nav-number">2.1.2.</span> <span class="nav-text">图解</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%BB%93%E6%9E%84%E4%BD%93%E4%BB%A3%E7%A0%81"><span class="nav-number">2.1.3.</span> <span class="nav-text">结构体代码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#ET-amp-LT"><span class="nav-number">2.1.4.</span> <span class="nav-text">ET&amp;LT</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E9%AB%98%E6%95%88%E6%80%BB%E7%BB%93"><span class="nav-number">2.1.5.</span> <span class="nav-text">高效总结</span></a></li></ol></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x01-%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">3.</span> <span class="nav-text">0x01.参考链接 </span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">liyan</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

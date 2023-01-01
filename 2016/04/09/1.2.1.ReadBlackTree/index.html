@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="红黑树1.简介红黑树是一种特殊的二叉查找树。红黑树的每个节点上都有存储位表示节点的颜色，可以是红(Red)或黑(Black)。红黑树的节点结构如下:  struct t_red_black_node &amp;#123;     enum &amp;#123; red, black &amp;#125; colour;     void *item;     struct t_red_black_node *left,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="红黑树">
+<meta property="og:url" content="http://www.antwhy.com/2016/04/09/1.2.1.ReadBlackTree/index.html">
+<meta property="og:site_name" content="AntWhy">
+<meta property="og:description" content="红黑树1.简介红黑树是一种特殊的二叉查找树。红黑树的每个节点上都有存储位表示节点的颜色，可以是红(Red)或黑(Black)。红黑树的节点结构如下:  struct t_red_black_node &amp;#123;     enum &amp;#123; red, black &amp;#125; colour;     void *item;     struct t_red_black_node *left,">
+<meta property="og:locale">
+<meta property="og:image" content="https://d26dzxoao6i3hh.cloudfront.net/items/0j3p2F3A3I0A1E0k0e3e/rb_tree1.gif?v=3371e7b2">
+<meta property="og:image" content="https://d26dzxoao6i3hh.cloudfront.net/items/102k3O1v0d3T2N0m2L1X/rb_tree_rot.gif?v=a3b4363c">
+<meta property="og:image" content="https://d26dzxoao6i3hh.cloudfront.net/items/0Z3v2E0m1M1Q0s1k2Q0J/rb_tree1a.gif?v=19e1d542">
+<meta property="og:image" content="https://d26dzxoao6i3hh.cloudfront.net/items/3j3V3S1Y3s0c3W1y2x1z/rb_tree2a.gif?v=d7bf984d">
+<meta property="og:image" content="https://d26dzxoao6i3hh.cloudfront.net/items/362d120Q0z0K3q3E3B0U/rb_tree3a.gif?v=d7bf984d">
+<meta property="og:image" content="https://d26dzxoao6i3hh.cloudfront.net/items/1s1B1N3s0I1P143p0l1q/rb_tree4a.gif?v=d7bf984d">
+<meta property="og:image" content="https://d26dzxoao6i3hh.cloudfront.net/items/0T1K2i073p2r3o193h0A/rb_tree5a.gif?v=d7bf984d">
+<meta property="og:image" content="https://d26dzxoao6i3hh.cloudfront.net/items/0Y1k1g0z3y0s1B030141/rb_tree6a.gif?v=d7bf984d">
+<meta property="og:image" content="https://d26dzxoao6i3hh.cloudfront.net/items/1Y2b3D2t1k1b3k2R2M2B/rb_tree7a.gif?v=d7bf984d">
+<meta property="og:image" content="https://d26dzxoao6i3hh.cloudfront.net/items/1a0z123C0E0D0R2m2j1C/rb_tree8a.gif?v=c70086de">
+<meta property="article:published_time" content="2016-04-09T08:21:30.000Z">
+<meta property="article:modified_time" content="2018-01-13T10:46:23.000Z">
+<meta property="article:author" content="liyan">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://d26dzxoao6i3hh.cloudfront.net/items/0j3p2F3A3I0A1E0k0e3e/rb_tree1.gif?v=3371e7b2">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.antwhy.com/2016/04/09/1.2.1.ReadBlackTree/"/>
+
+
+
+
+
+  <title>红黑树 | AntWhy</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AntWhy</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Server Engineer</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.antwhy.com/2016/04/09/1.2.1.ReadBlackTree/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AntWhy">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">红黑树</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-04-09T16:21:30+08:00">
+                2016-04-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="红黑树"><a href="#红黑树" class="headerlink" title="红黑树"></a>红黑树</h1><h2 id="1-简介"><a href="#1-简介" class="headerlink" title="1.简介"></a>1.简介</h2><p>红黑树是一种特殊的二叉查找树。红黑树的每个节点上都有存储位表示节点的颜色，可以是红(Red)或黑(Black)。红黑树的节点结构如下:</p>
+<code>
+struct t_red_black_node &#123;
+    enum &#123; red, black &#125; colour;
+    void *item;
+    struct t_red_black_node *left,
+                     *right,
+                     *parent;
+&#125;
+</code>
+
+<font color=#7CFC00 size=2 face="微软雅黑">
+红黑树五个特性:</br>
+(1) 每个节点或者是黑色，或者是红色。</br>
+(2) 根节点是黑色。</br>
+(3) 每个叶子节点是黑色。 [注意：这里叶子节点，是指为空的叶子节点！]</br>
+(4) 如果一个节点是红色的，则它的子节点必须是黑色的。</br>
+(5) 从一个节点到该节点的子孙节点的所有路径上包含相同数目的黑节点。
+</font>
+
+<p>基础红黑树:<br><img src="https://d26dzxoao6i3hh.cloudfront.net/items/0j3p2F3A3I0A1E0k0e3e/rb_tree1.gif?v=3371e7b2" alt="rbtree"> </p>
+<h2 id="2-应用"><a href="#2-应用" class="headerlink" title="2.应用"></a>2.应用</h2><p>红黑树的应用比较广泛，主要是用它来存储有序的数据，它的时间复杂度是O(lgn)，效率非常之高。<br>例如，Java集合中的TreeSet和TreeMap，C++ STL中的set、map，以及Linux虚拟内存的管理，都是通过红黑树去实现的。</p>
+<h2 id="3-旋转"><a href="#3-旋转" class="headerlink" title="3.旋转"></a>3.旋转</h2><p><img src="https://d26dzxoao6i3hh.cloudfront.net/items/102k3O1v0d3T2N0m2L1X/rb_tree_rot.gif?v=a3b4363c" alt="rbtreer"></p>
+<p>左旋代码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">left_rotate( Tree T, node x ) &#123;</span><br><span class="line">    node y;</span><br><span class="line">    y = x-&gt;right;</span><br><span class="line">	/*旋转y的左节点到x的右节点*/</span><br><span class="line">    x-&gt;right = y-&gt;left;</span><br><span class="line">    if ( y-&gt;left != NULL )</span><br><span class="line">        y-&gt;left-&gt;parent = x;</span><br><span class="line">	/*y的新父节点是x的父节点*/</span><br><span class="line">    y-&gt;parent = x-&gt;parent;</span><br><span class="line">	/*设置父节点 用y替换x*/</span><br><span class="line">	/*首先查看是否在根节点*/</span><br><span class="line">    if ( x-&gt;parent == NULL ) T-&gt;root = y;</span><br><span class="line">    else</span><br><span class="line">        if ( x == (x-&gt;parent)-&gt;left )</span><br><span class="line">            /* x was on the left of its parent */</span><br><span class="line">            x-&gt;parent-&gt;left = y;</span><br><span class="line">        else</span><br><span class="line">            /* x must have been on the right */</span><br><span class="line">            x-&gt;parent-&gt;right = y;</span><br><span class="line">	/*最终,将x放到y的左边*/</span><br><span class="line">    y-&gt;left = x;</span><br><span class="line">    x-&gt;parent = y;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="4-插入"><a href="#4-插入" class="headerlink" title="4.插入"></a>4.插入</h2><p>插入比较复杂,涉及到比较多的情况.我们根据五条特性考虑</br><br>第一步:考虑到尽量少违背五条原则 首先选择红色为插入节点</br><br>第二步: 对于”特性(1)”，显然不会违背了。因为我们已经将它涂成红色了。</br><br>对于”特性(2)”，显然也不会违背。在第一步中，我们是将红黑树当作二叉查找树，然后执行的插入操作。而根据二叉查找数的特点，插入操作不会改变根节点。所以，根节点仍然是黑色。</br><br>对于”特性(3)”，显然不会违背了。这里的叶子节点是指的空叶子节点，插入非空节点并不会对它们造成影响。</br><br>对于”特性(4)”，是有可能违背的！</br><br>那接下来，想办法使之”满足特性(4)”，就可以将树重新构造成红黑树了。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">//第一步</span><br><span class="line">RB-INSERT(T, z)  </span><br><span class="line"> y ← nil[T]                        // 新建节点“y”，将y设为空节点。</span><br><span class="line"> x ← root[T]                       // 设“红黑树T”的根节点为“x”</span><br><span class="line"> while x ≠ nil[T]                  // 找出要插入的节点“z”在二叉树T中的位置“y”</span><br><span class="line">     do y ← x                      </span><br><span class="line">        if key[z] &lt; key[x]  </span><br><span class="line">           then x ← left[x]  </span><br><span class="line">           else x ← right[x]  </span><br><span class="line"> p[z] ← y                          // 设置 “z的父亲” 为 “y”</span><br><span class="line"> if y = nil[T]                     </span><br><span class="line">    then root[T] ← z               // 情况1：若y是空节点，则将z设为根</span><br><span class="line">    else if key[z] &lt; key[y]        </span><br><span class="line">            then left[y] ← z       // 情况2：若“z所包含的值” &lt; “y所包含的值”，则将z设为“y的左孩子”</span><br><span class="line">            else right[y] ← z      // 情况3：(“z所包含的值” &gt;= “y所包含的值”)将z设为“y的右孩子” </span><br><span class="line"> left[z] ← nil[T]                  // z的左孩子设为空</span><br><span class="line"> right[z] ← nil[T]                 // z的右孩子设为空。至此，已经完成将“节点z插入到二叉树”中了。</span><br><span class="line"> color[z] ← RED                    // 将z着色为“红色”</span><br><span class="line"> RB-INSERT-FIXUP(T, z)             // 通过RB-INSERT-FIXUP对红黑树的节点进行颜色修改以及旋转，让树T仍然是一颗红黑树</span><br><span class="line"></span><br><span class="line">//第二步</span><br><span class="line">RB-INSERT-FIXUP(T, z)</span><br><span class="line">while color[p[z]] = RED                                                  // 若“当前节点(z)的父节点是红色”，则进行以下处理。</span><br><span class="line">    do if p[z] = left[p[p[z]]]                                           // 若“z的父节点”是“z的祖父节点的左孩子”，则进行以下处理。</span><br><span class="line">          then y ← right[p[p[z]]]                                        // 将y设置为“z的叔叔节点(z的祖父节点的右孩子)”</span><br><span class="line">               if color[y] = RED                                         // Case 1条件：叔叔是红色</span><br><span class="line">                  then color[p[z]] ← BLACK                    ▹ Case 1   //  (01) 将“父节点”设为黑色。</span><br><span class="line">                       color[y] ← BLACK                       ▹ Case 1   //  (02) 将“叔叔节点”设为黑色。</span><br><span class="line">                       color[p[p[z]]] ← RED                   ▹ Case 1   //  (03) 将“祖父节点”设为“红色”。</span><br><span class="line">                       z ← p[p[z]]                            ▹ Case 1   //  (04) 将“祖父节点”设为“当前节点”(红色节点)</span><br><span class="line">                  else if z = right[p[z]]                                // Case 2条件：叔叔是黑色，且当前节点是右孩子</span><br><span class="line">                          then z ← p[z]                       ▹ Case 2   //  (01) 将“父节点”作为“新的当前节点”。</span><br><span class="line">                               LEFT-ROTATE(T, z)              ▹ Case 2   //  (02) 以“新的当前节点”为支点进行左旋。</span><br><span class="line">                          color[p[z]] ← BLACK                 ▹ Case 3   // Case 3条件：叔叔是黑色，且当前节点是左孩子。(01) 将“父节点”设为“黑色”。</span><br><span class="line">                          color[p[p[z]]] ← RED                ▹ Case 3   //  (02) 将“祖父节点”设为“红色”。</span><br><span class="line">                          RIGHT-ROTATE(T, p[p[z]])            ▹ Case 3   //  (03) 以“祖父节点”为支点进行右旋。</span><br><span class="line">       else (same as then clause with &quot;right&quot; and &quot;left&quot; exchanged)      // 若“z的父节点”是“z的祖父节点的右孩子”，将上面的操作中“right”和“left”交换位置，然后依次执行。</span><br><span class="line">color[root[T]] ← BLACK</span><br></pre></td></tr></table></figure>
+
+<p>图示流程</br><br>1.这是最基础的红黑树,注:最底部部分图中节点省略<br><img src="https://d26dzxoao6i3hh.cloudfront.net/items/0Z3v2E0m1M1Q0s1k2Q0J/rb_tree1a.gif?v=19e1d542" alt="inster1"></br><br>2.插入节点”4”,它不再是一颗红黑树,在 11 - 2 - 7 - 5 - 4 路径中,因为有两个连续的红点 . 并且作为新的节点 x,它的叔节点 y,y为红色</br><br><img src="https://d26dzxoao6i3hh.cloudfront.net/items/3j3V3S1Y3s0c3W1y2x1z/rb_tree2a.gif?v=d7bf984d" alt="inster2"></br><br>3.修改5,7,8三个节点的颜色</br><br><img src="https://d26dzxoao6i3hh.cloudfront.net/items/362d120Q0z0K3q3E3B0U/rb_tree3a.gif?v=d7bf984d" alt="inster3"></br><br>4.移动x到祖父节点7,x的父节点依然为红色,所有依然不是红黑树,标记叔节点 y。y节点为黑色</br><br><img src="https://d26dzxoao6i3hh.cloudfront.net/items/1s1B1N3s0I1P143p0l1q/rb_tree4a.gif?v=d7bf984d" alt="inster4"></br><br>5.向上移动x,并且左旋</br><br><img src="https://d26dzxoao6i3hh.cloudfront.net/items/0T1K2i073p2r3o193h0A/rb_tree5a.gif?v=d7bf984d" alt="inster5"></br><br>6.依然不是红黑树…这时叔节点是黑色,但是x的父节点在左</br><br><img src="https://d26dzxoao6i3hh.cloudfront.net/items/0Y1k1g0z3y0s1B030141/rb_tree6a.gif?v=d7bf984d" alt="inster6"></br><br>7.修改7和11节点颜色,并右旋</br><br><img src="https://d26dzxoao6i3hh.cloudfront.net/items/1Y2b3D2t1k1b3k2R2M2B/rb_tree7a.gif?v=d7bf984d" alt="inster7"></br><br>8.最终我们得到一颗新的红黑树</br><br><img src="https://d26dzxoao6i3hh.cloudfront.net/items/1a0z123C0E0D0R2m2j1C/rb_tree8a.gif?v=c70086de" alt="inster8"></br></p>
+<p><a target="_blank" rel="noopener" href="https://www.cs.auckland.ac.nz/software/AlgAnim/red_black.html">参考链接</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/03/15/5.algorithms/" rel="next" title="Algorithms">
+                <i class="fa fa-chevron-left"></i> Algorithms
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/05/30/1.3.English-word/" rel="prev" title="英语 -- 单词篇">
+                英语 -- 单词篇 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">标签</span>
+                
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%BA%A2%E9%BB%91%E6%A0%91"><span class="nav-number">1.</span> <span class="nav-text">红黑树</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#1-%E7%AE%80%E4%BB%8B"><span class="nav-number">1.1.</span> <span class="nav-text">1.简介</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#2-%E5%BA%94%E7%94%A8"><span class="nav-number">1.2.</span> <span class="nav-text">2.应用</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#3-%E6%97%8B%E8%BD%AC"><span class="nav-number">1.3.</span> <span class="nav-text">3.旋转</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#4-%E6%8F%92%E5%85%A5"><span class="nav-number">1.4.</span> <span class="nav-text">4.插入</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">liyan</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="0x01.即时通讯IM需求去年中旬时，公司业务蓬勃的发展，用户量蹭蹭蹭的上涨，之前公司请你外包做的im通讯软件开始各种扛不住压力，移动端、网页端、服务端各种频繁报错。然后去找外包维护(因为闭源)，外包的工作效率之低，而且维护费用巨高，当时公司还处于B轮融资的重要阶段，出门演示自家软件IM部分频繁报错，各种尴尬。公司开始考虑自己搭建一个 即时通讯(Instant Messaging，简称IM) 说说">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从无到有构造DAU千万级别IM服务">
+<meta property="og:url" content="http://www.antwhy.com/2018/01/05/11.im-architecture/index.html">
+<meta property="og:site_name" content="AntWhy">
+<meta property="og:description" content="0x01.即时通讯IM需求去年中旬时，公司业务蓬勃的发展，用户量蹭蹭蹭的上涨，之前公司请你外包做的im通讯软件开始各种扛不住压力，移动端、网页端、服务端各种频繁报错。然后去找外包维护(因为闭源)，外包的工作效率之低，而且维护费用巨高，当时公司还处于B轮融资的重要阶段，出门演示自家软件IM部分频繁报错，各种尴尬。公司开始考虑自己搭建一个 即时通讯(Instant Messaging，简称IM) 说说">
+<meta property="og:locale">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/2m0R2r2S0q0k150j2K1n/QQ20180328-224209.png?v=2631f366">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/1Y3l0x1B2y0V3F2z2e15/QQ20180328-231937.png?v=25d6ac07">
+<meta property="og:image" content="https://dzwonsemrish7.cloudfront.net/items/3t353T173v14310A3s3I/QQ20180423-220511.png?v=b0b86121">
+<meta property="article:published_time" content="2018-01-05T13:46:56.000Z">
+<meta property="article:modified_time" content="2018-04-28T07:08:17.000Z">
+<meta property="article:author" content="liyan">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://d2ffutrenqvap3.cloudfront.net/items/2m0R2r2S0q0k150j2K1n/QQ20180328-224209.png?v=2631f366">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.antwhy.com/2018/01/05/11.im-architecture/"/>
+
+
+
+
+
+  <title>从无到有构造DAU千万级别IM服务 | AntWhy</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AntWhy</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Server Engineer</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.antwhy.com/2018/01/05/11.im-architecture/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AntWhy">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">从无到有构造DAU千万级别IM服务</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-01-05T21:46:56+08:00">
+                2018-01-05
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="0x01-即时通讯"><a href="#0x01-即时通讯" class="headerlink" title="0x01.即时通讯"></a><span style="color:#436EEE;font-size:24px">0x01.即时通讯</span></h1><h2 id="IM需求"><a href="#IM需求" class="headerlink" title="IM需求"></a><span style="color:#436EEE;font-size:20px">IM需求</span></h2><p>去年中旬时，公司业务蓬勃的发展，用户量蹭蹭蹭的上涨，之前公司请你外包做的im通讯软件开始各种扛不住压力，移动端、网页端、服务端各种频繁报错。然后去找外包维护(因为闭源)，外包的工作效率之低，而且维护费用巨高，当时公司还处于B轮融资的重要阶段，出门演示自家软件IM部分频繁报错，各种尴尬。公司开始考虑自己搭建一个 <span style="color:#FF5252;font-size:16px">即时通讯(Instant Messaging，简称IM)</span> 说说简单，做起来却难。</p>
+<h2 id="探究技术方案"><a href="#探究技术方案" class="headerlink" title="探究技术方案"></a><span style="color:#436EEE;font-size:20px">探究技术方案</span></h2><p>有困难就要想解决方案，最初的想法是找个开源框架，然后进行修改修改，改成自己公司需要的模样。于是google、github上一顿翻箱倒柜。发现了几款已有的IM方案，<span style="color:#6959CD;font-size:16px">第一种方案</span> <a target="_blank" rel="noopener" href="http://docs.easemob.com/im/start">环信</a>、<a target="_blank" rel="noopener" href="http://www.rongcloud.cn/docs/">融云</a><br><img src="https://d2ffutrenqvap3.cloudfront.net/items/2m0R2r2S0q0k150j2K1n/QQ20180328-224209.png?v=2631f366"></p>
+<p><span style="color:#FF5252;font-size:16px">优点</span>:集成度高，移动端、H5端等直接使用SDK，服务端已部署完成无需维护，而且相对成熟，坑比较少。<br><span style="color:#FF5252;font-size:16px">缺点</span>:收费、服务端无法自定义需求(由于我们公司有些特殊的需求)</p>
+<p><span style="color:#6959CD;font-size:16px">第二种方案</span> <a target="_blank" rel="noopener" href="https://github.com/meili/TeamTalk">蘑菇街TeamTalk</a><br><img src="https://d2ffutrenqvap3.cloudfront.net/items/1Y3l0x1B2y0V3F2z2e15/QQ20180328-231937.png?v=25d6ac07"><br><span style="color:#FF5252;font-size:16px">优点</span>:集成度高，开源，服务端、移动端等代码完备。<br><span style="color:#FF5252;font-size:16px">缺点</span>:由于某易告侵权，已经停更。未支持websocket协议(由于公司旧版im需要兼容)</p>
+<h2 id="自己操刀"><a href="#自己操刀" class="headerlink" title="自己操刀"></a><span style="color:#436EEE;font-size:20px">自己操刀</span></h2><p>看来天公不作美，是时候秀一波操作来制作一个属于自己的IM了，联合公司移动端、H5端商讨下im方案。首先整理面临的问题:<br><span style="color:#81D4FA;font-size:16px">1.公司用户聊天需要特殊的定制需求，将来服务端和客户端根据业务同时改动。<br>2.需要支持移动端(iOS,Android)、H5、PC端<br>3.需要兼容旧版本(外包项目遗留的IM,使用<a target="_blank" rel="noopener" href="https://blog.csdn.net/tianshi0007/article/details/52698374">Websocket协议</a>)<br>4.满足快速增长的用户量，做到消息触达及时、准确<br>5.时间不是很充裕，面临融资，需要能快速上线。<br></span></p>
+<p>最终基本确定方案为: 三端都使用<span style="color:#6959CD;font-size:16px">Websocket协议</span>，兼容老版本的问题由服务端来完成，到时候升级时客户端会给出建议用户升级提示。</p>
+<h1 id="0x02-IM初步架构"><a href="#0x02-IM初步架构" class="headerlink" title="0x02.IM初步架构"></a><span style="color:#436EEE;font-size:24px">0x02.IM初步架构</span></h1><p>确定方针后，开始行动了。先大概设计下im架构，架构应该考虑当时方案的可行性，并非越复杂越好，应该是越适应业务的高速成长或者后期灵活性高，修改成本低才是好方案。首先考虑im的场景，是两人或者多人之间的聊天，所以<span style="color:#0066CC;font-size:16px">聊天信息是增长比较快的数据</span>。聊天还涉及到<span style="color:#54FF9F;font-size:16px">消息的触达状态、涉及到人员之间的关系、消息的多种类型</span>等等。</p>
+<h2 id="表结构"><a href="#表结构" class="headerlink" title="表结构"></a><span style="color:#436EEE;font-size:20px">表结构</span></h2><p><img src="https://dzwonsemrish7.cloudfront.net/items/3t353T173v14310A3s3I/QQ20180423-220511.png?v=b0b86121"><br><span style="color:#EE2C2C;font-size:16px">base_user_info</span> : 用户信息表(存储所有的用户相关的信息)<br><span style="color:#EE2C2C;font-size:16px">group</span> : 聊天组信息表(两两聊天也可获取一个groupId，多人聊天也获取一个groupId，聊天的标示)<br><span style="color:#EE2C2C;font-size:16px">group_member</span> : 组成员表(聊天组中成员，为了做信息转发)<br><span style="color:#EE2C2C;font-size:16px">user_relation</span> : 用户关系表(如A用户对应的好友或者黑名单用户等)<br><span style="color:#EE2C2C;font-size:16px">message</span> : 聊天内容表(记录用户聊天信息)<br><span style="color:#EE2C2C;font-size:16px">message_status</span> : 聊天状态表(记录A用户发送信息给B或者组中每个成员的的消息接受状态)</p>
+<p>我们来看下三个场景中表数据的变化<br><span style="color:#E066FF;font-size:16px">1.场景A: 用户A给用户B发送消息</span>。</p>
+<p>用户A使用设备与服务端建立连接，添加B为好友(<span style="color:#C1C1C1;font-size:16px">此操作将向group表中添加一条数据，两人聊天的唯一标识，向group_member中插入两条数据，向user_relation中插入一条关系数据</span>)。然后A发起对B的聊天，发送内容 abc (<span style="color:#C1C1C1;font-size:16px">此操作向message表中插入一条数据(聊天内容)，向message_status中插入两条数据(发送给自己的状态为成功，发送给B的状态为发送中)</span>)。B打开终端接收到了A发送的信息(<span style="color:#C1C1C1;font-size:16px">次操作将update message_status中B对改消息的接受状态(此次有种情况就是A发送消息时B不在线，A发送的消息入库，等B上线时，服务端根据为发送状态进行判断，继续将消息推送给B</span>)。<br>其中有中特殊情况，如果A向B发送消息但是B拉黑了A，这种情况A发送消息B是无法收到的，并且A将发送失败。所以A消息发送给B时，首先得判断B的关系表中A状态。</p>
+<p><span style="color:#E066FF;font-size:16px">场景B: 用户A给群发送消息</span>。</p>
+<p>用户A点击好友中B、C、D、E发起群聊(<span style="color:#C1C1C1;font-size:16px">group表中添加一条记录，group_member中添加5条记录，添加或删除一个好友到群聊的话，group_member中添加或删除一条记录</span>)。然后A发送消息 abc 到群中，服务端分别向其他4个人推送消息，其中有个问题，如果其中有一个用户是多端登录的，就需要推送多端，所以推送的channel list应该是一个ConcurrentHashMap&lt;Long, List<Channel>&gt;，Long类型的Uid，List为用户对应的channel list(<span style="color:#C1C1C1;font-size:16px">每个设备一个channel</span>)。多个设备中涉及到消息已接受和消息已读两个状态，这里的处理是任何一个设备反馈消息已接受消息已读就将消息设置为已接受和已读(<span style="color:#C1C1C1;font-size:16px">message_status表中即使多设备依然一条记录，任何一个设备反馈已接受已读，则update send_status 和 read_status状态</span>)。</p>
+<p><span style="color:#E066FF;font-size:16px">场景C: 陌生人之间发送消息或者聊天室</span>。<br>上述两种场景是建立在好友(<span style="color:#C1C1C1;font-size:16px">user_relation中增加过相应的数据</span>)，如果两人非好友，或者在一个群聊的聊天室呢? 这种场景其实也可以基于上述情况处理，第一种两个陌生人，同样在group中获取聊天标示，然后message中记录发送消息，message_status中记录发送状态，聊天室同理。陌生人或者说直播室的信息可能要考虑的是非常多的人在一个组中，可以参考某些直播动不动上百万的同事在线，聊天信息非常迅速的推送。</p>
+<p>三种场景中数据库操作比较频繁的是message和message_status两张表。聊天的人员过多时，表数据将暴增，所以进行分表操作，根据groupId进行分表操作。</p>
+<h2 id="chat结构"><a href="#chat结构" class="headerlink" title="chat结构"></a><span style="color:#436EEE;font-size:20px">chat结构</span></h2><p>表的设计完成后，我们来看下chat系统的具体架构方案。由于大概设计目前需求的流量保证峰值10w用户的在线量，目前预计部署两台服务器。</p>
+<h1 id="0x01-参考链接"><a href="#0x01-参考链接" class="headerlink" title="0x01.参考链接"></a><span style="color:#436EEE;font-size:24px">0x01.参考链接</span></h1><p><a target="_blank" rel="noopener" href="https://blog.csdn.net/tianshi0007/article/details/52698374">1. https://blog.csdn.net/tianshi0007/article/details/52698374</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/08/03/10.linux-epoll/" rel="next" title="Linux内核如何高效处理海量网络IO?">
+                <i class="fa fa-chevron-left"></i> Linux内核如何高效处理海量网络IO?
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/08/03/hello-world/" rel="prev" title="Hello World">
+                Hello World <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">标签</span>
+                
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#0x01-%E5%8D%B3%E6%97%B6%E9%80%9A%E8%AE%AF"><span class="nav-number">1.</span> <span class="nav-text">0x01.即时通讯</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#IM%E9%9C%80%E6%B1%82"><span class="nav-number">1.1.</span> <span class="nav-text">IM需求</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8E%A2%E7%A9%B6%E6%8A%80%E6%9C%AF%E6%96%B9%E6%A1%88"><span class="nav-number">1.2.</span> <span class="nav-text">探究技术方案</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%87%AA%E5%B7%B1%E6%93%8D%E5%88%80"><span class="nav-number">1.3.</span> <span class="nav-text">自己操刀</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x02-IM%E5%88%9D%E6%AD%A5%E6%9E%B6%E6%9E%84"><span class="nav-number">2.</span> <span class="nav-text">0x02.IM初步架构</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%A1%A8%E7%BB%93%E6%9E%84"><span class="nav-number">2.1.</span> <span class="nav-text">表结构</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#chat%E7%BB%93%E6%9E%84"><span class="nav-number">2.2.</span> <span class="nav-text">chat结构</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x01-%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">3.</span> <span class="nav-text">0x01.参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">liyan</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="0x01.AOP简介什么是AOPIn computing, aspect-oriented programming (AOP) is a programming paradigm that aims to increase modularity by allowing the separation of cross-cutting concerns. It does so by adding ad">
+<meta property="og:type" content="article">
+<meta property="og:title" content="AOP静态、动态代理">
+<meta property="og:url" content="http://www.antwhy.com/2017/02/23/9.aspectj-analyze/index.html">
+<meta property="og:site_name" content="AntWhy">
+<meta property="og:description" content="0x01.AOP简介什么是AOPIn computing, aspect-oriented programming (AOP) is a programming paradigm that aims to increase modularity by allowing the separation of cross-cutting concerns. It does so by adding ad">
+<meta property="og:locale">
+<meta property="article:published_time" content="2017-02-23T02:56:45.000Z">
+<meta property="article:modified_time" content="2018-03-07T13:53:05.000Z">
+<meta property="article:author" content="liyan">
+<meta name="twitter:card" content="summary">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.antwhy.com/2017/02/23/9.aspectj-analyze/"/>
+
+
+
+
+
+  <title>AOP静态、动态代理 | AntWhy</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AntWhy</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Server Engineer</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.antwhy.com/2017/02/23/9.aspectj-analyze/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AntWhy">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">AOP静态、动态代理</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-02-23T10:56:45+08:00">
+                2017-02-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="0x01-AOP简介"><a href="#0x01-AOP简介" class="headerlink" title="0x01.AOP简介"></a><span style="color:#436EEE;font-size:24px">0x01.AOP简介</span></h1><h2 id="什么是AOP"><a href="#什么是AOP" class="headerlink" title="什么是AOP"></a><span style="color:#436EEE;font-size:20px">什么是AOP</span></h2><p><span style="color:#575757;font-size:17px">In computing, aspect-oriented programming (AOP) is a programming paradigm that aims to increase modularity by allowing the separation of cross-cutting concerns. It does so by adding additional behavior to existing code (an advice) without modifying the code itself, instead separately specifying which code is modified via a “pointcut” specification, such as “log all function calls when the function’s name begins with ‘set’”. This allows behaviors that are not central to the business logic (such as logging) to be added to a program without cluttering the code, core to the functionality. AOP forms a basis for aspect-oriented software development.</span> <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Aspect-oriented_programming">Wikipedia</a><br>在计算机中,AOP是一种自动增加模块通过横切关注点分离的程序范式。它不需要修改原有的代码实现增加附加的功能在原有代码上,而不是单独指定那段代码通过”pointcut”规范,比如”方法名以’set’开头的所有方法实现日志功能”。这种行为不是核心业务逻辑(比如日志功能)被添加到一个程序无需破坏代码,核心的功能。AOP形式面向切面软件开发的基础。</p>
+<h2 id="AOP的作用是什么"><a href="#AOP的作用是什么" class="headerlink" title="AOP的作用是什么"></a><span style="color:#436EEE;font-size:20px">AOP的作用是什么</span></h2><p>AOP作为OOP的一种补充，广泛应用于处理一些具有横切性质的系统级服务，如<span style="color:#FF8C00;font-size:16px">事务管理、安全检查、缓存、对象池管理</span>等。AOP实现的关键就在于AOP框架自动创建的AOP代理，AOP代理则可分为静态代理和动态代理两大类，其中静态代理是指使用AOP框架提供的命令进行编译如AspectJ。而动态代理则在运行时借助于JDK动态代理、CGLIB等在内存中“临时”生成AOP动态代理类。</p>
+<h1 id="0x02-静态代理"><a href="#0x02-静态代理" class="headerlink" title="0x02.静态代理"></a><span style="color:#436EEE;font-size:24px">0x02.静态代理</span></h1><p><span style="color:#9BE95A;font-size:16px">静态代理就是AOP框架会在编译阶段生成AOP代理类，因此也称为编译时增强。</span>AspectJ作为典型的静态代理实现,我们来探究下其中的奥秘。</p>
+<h2 id="AspectJ"><a href="#AspectJ" class="headerlink" title="AspectJ"></a><span style="color:#436EEE;font-size:20px">AspectJ</span></h2><p>AspectJ是最早、功能比较强大的AOP实现之一，基于Java语言的AOP框架，对整套AOP机制都有较好的实现，很多其他语言的AOP实现，也借鉴或采纳了AspectJ中很多设计。在Java领域，AspectJ中的很多语法结构基本上已成为AOP领域的标准。</p>
+<p>我们可以到<a target="_blank" rel="noopener" href="http://www.eclipse.org/aspectj">AspectJ官网</a>，下载并安装。我们拿官方的一个例子来感受下AspectJ的用法，并分析AspectJ如何在编译时进行增强。<br><span style="color:#63B8FF;font-size:16px">Demo.java</span></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Demo</span> &#123;</span><br><span class="line">    <span class="keyword">static</span> Demo d;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span>&#123;</span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">Demo</span>().go();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">go</span><span class="params">()</span>&#123;</span><br><span class="line">        d = <span class="keyword">new</span> <span class="title class_">Demo</span>();</span><br><span class="line">        d.foo(<span class="number">1</span>,d);</span><br><span class="line">        System.out.println(d.bar(<span class="keyword">new</span> <span class="title class_">Integer</span>(<span class="number">3</span>)));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">foo</span><span class="params">(<span class="type">int</span> i, Object o)</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Demo.foo(&quot;</span> + i + <span class="string">&quot;, &quot;</span> + o + <span class="string">&quot;)\n&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    String <span class="title function_">bar</span> <span class="params">(Integer j)</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Demo.bar(&quot;</span> + j + <span class="string">&quot;)\n&quot;</span>);</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Demo.bar(&quot;</span> + j  + <span class="string">&quot;)&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果我们单独用javac编译Demo.java文件并且执行出来的结果</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ Demo.foo(<span class="number">1</span>, Demo@<span class="number">7852e922</span>)</span><br><span class="line">$ Demo.bar(<span class="number">3</span>)</span><br><span class="line">$ Demo.bar(<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+<p>我们接着使用官方AOP范例<span style="color:#63B8FF;font-size:16px">GetInfo.java</span></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> org.aspectj.lang.JoinPoint;</span><br><span class="line"><span class="keyword">import</span> org.aspectj.lang.reflect.CodeSignature;</span><br><span class="line"></span><br><span class="line">aspect GetInfo &#123;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">println</span><span class="params">(String s)</span>&#123; System.out.println(s); &#125;</span><br><span class="line"></span><br><span class="line">   pointcut <span class="title function_">goCut</span><span class="params">()</span>: cflow(<span class="built_in">this</span>(Demo) &amp;&amp; execution(<span class="keyword">void</span> <span class="title function_">go</span><span class="params">()</span>));</span><br><span class="line"></span><br><span class="line">   pointcut <span class="title function_">demoExecs</span><span class="params">()</span>: within(Demo) &amp;&amp; execution(* *(..));</span><br><span class="line"></span><br><span class="line">   Object <span class="title function_">around</span><span class="params">()</span>: demoExecs() &amp;&amp; !execution(* go()) &amp;&amp; goCut() &#123;</span><br><span class="line">      println(<span class="string">&quot;Intercepted message: &quot;</span> +</span><br><span class="line">          thisJoinPointStaticPart.getSignature().getName());</span><br><span class="line">      println(<span class="string">&quot;in class: &quot;</span> +</span><br><span class="line">          thisJoinPointStaticPart.getSignature().getDeclaringType().getName());</span><br><span class="line">      printParameters(thisJoinPoint);</span><br><span class="line">      println(<span class="string">&quot;Running original method: \n&quot;</span> );</span><br><span class="line">      <span class="type">Object</span> <span class="variable">result</span> <span class="operator">=</span> proceed();</span><br><span class="line">      println(<span class="string">&quot;  result: &quot;</span> + result );</span><br><span class="line">      <span class="keyword">return</span> result;</span><br><span class="line">   &#125;</span><br><span class="line"></span><br><span class="line">   <span class="keyword">static</span> <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">printParameters</span><span class="params">(JoinPoint jp)</span> &#123;</span><br><span class="line">      println(<span class="string">&quot;Arguments: &quot;</span> );</span><br><span class="line">      Object[] args = jp.getArgs();</span><br><span class="line">      String[] names = ((CodeSignature)jp.getSignature()).getParameterNames();</span><br><span class="line">      Class[] types = ((CodeSignature)jp.getSignature()).getParameterTypes();</span><br><span class="line">      <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; args.length; i++) &#123;</span><br><span class="line">         println(<span class="string">&quot;  &quot;</span>  + i + <span class="string">&quot;. &quot;</span> + names[i] +</span><br><span class="line">             <span class="string">&quot; : &quot;</span> +            types[i].getName() +</span><br><span class="line">             <span class="string">&quot; = &quot;</span> +            args[i]);</span><br><span class="line">      &#125;</span><br><span class="line">   &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来我们使用Aspect编译</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ ajc Demo.java GetInfo.java</span><br><span class="line">$ java Demo  <span class="comment">//executive command</span></span><br></pre></td></tr></table></figure>
+<p>得到结果如下</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">Intercepted message: foo</span><br><span class="line">in class: Demo</span><br><span class="line">Arguments:</span><br><span class="line">  <span class="number">0.</span> i : <span class="type">int</span> = <span class="number">1</span></span><br><span class="line">  <span class="number">1.</span> o : java.lang.Object = Demo@5674cd4d</span><br><span class="line">Running original method:</span><br><span class="line"></span><br><span class="line">Demo.foo(<span class="number">1</span>, Demo@5674cd4d)</span><br><span class="line"></span><br><span class="line">  result: <span class="literal">null</span></span><br><span class="line">Intercepted message: bar</span><br><span class="line">in class: Demo</span><br><span class="line">Arguments:</span><br><span class="line">  <span class="number">0.</span> j : java.lang.Integer = <span class="number">3</span></span><br><span class="line">Running original method:</span><br><span class="line"></span><br><span class="line">Demo.bar(<span class="number">3</span>)</span><br><span class="line"></span><br><span class="line">  result: Demo.bar(<span class="number">3</span>)</span><br><span class="line">Demo.bar(<span class="number">3</span>)</span><br></pre></td></tr></table></figure>
+<p>对照两次的结果,读者可能已经发行,我们并未修改Demo.java中的代码,但是Demo.java运行出来的结果却出乎我们意料的增加了<span style="color:#63B8FF;font-size:16px">Intercepted message</span>等新功能,为何会有如此神奇的事情产生,我们用java反编译工具来查看下Demo.class文件。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br></pre></td><td class="code"><pre><span class="line">import java.io.PrintStream;</span><br><span class="line">import org.aspectj.lang.JoinPoint;</span><br><span class="line">import org.aspectj.lang.JoinPoint.StaticPart;</span><br><span class="line">import org.aspectj.lang.Signature;</span><br><span class="line">import org.aspectj.runtime.internal.AroundClosure;</span><br><span class="line">import org.aspectj.runtime.internal.CFlowCounter;</span><br><span class="line">import org.aspectj.runtime.internal.Conversions;</span><br><span class="line">import org.aspectj.runtime.reflect.Factory;</span><br><span class="line"></span><br><span class="line">public class Demo</span><br><span class="line">&#123;</span><br><span class="line">  static Demo d;</span><br><span class="line">  private static final JoinPoint.StaticPart ajc$tjp_0;</span><br><span class="line">  private static final JoinPoint.StaticPart ajc$tjp_1;</span><br><span class="line">  private static final JoinPoint.StaticPart ajc$tjp_2;</span><br><span class="line">  </span><br><span class="line">  public static void main(String[] args)</span><br><span class="line">  &#123;</span><br><span class="line">    String[] arrayOfString = args;JoinPoint localJoinPoint = Factory.makeJP(ajc$tjp_0, null, null, arrayOfString);</span><br><span class="line">    if (GetInfo.ajc$cflowCounter$0.isValid())</span><br><span class="line">    &#123;</span><br><span class="line">      main_aroundBody1$advice(arrayOfString, localJoinPoint, GetInfo.aspectOf(), null, ajc$tjp_0, localJoinPoint);return;</span><br><span class="line">    &#125;</span><br><span class="line">    main_aroundBody0(arrayOfString, localJoinPoint);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  void foo(int i, Object o)</span><br><span class="line">  &#123;</span><br><span class="line">    int i = i;Object localObject = o;JoinPoint localJoinPoint = Factory.makeJP(ajc$tjp_1, this, this, Conversions.intObject(i), localObject);</span><br><span class="line">    if (GetInfo.ajc$cflowCounter$0.isValid())</span><br><span class="line">    &#123;</span><br><span class="line">      foo_aroundBody3$advice(this, i, localObject, localJoinPoint, GetInfo.aspectOf(), null, ajc$tjp_1, localJoinPoint);return;</span><br><span class="line">    &#125;</span><br><span class="line">    foo_aroundBody2(this, i, localObject, localJoinPoint);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  String bar(Integer j)</span><br><span class="line">  &#123;</span><br><span class="line">    Integer localInteger = j;JoinPoint localJoinPoint = Factory.makeJP(ajc$tjp_2, this, this, localInteger);</span><br><span class="line">    if (GetInfo.ajc$cflowCounter$0.isValid()) &#123;</span><br><span class="line">      return (String)bar_aroundBody5$advice(this, localInteger, localJoinPoint, GetInfo.aspectOf(), null, ajc$tjp_2, localJoinPoint);</span><br><span class="line">    &#125;</span><br><span class="line">    return bar_aroundBody4(this, localInteger, localJoinPoint);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  private static void ajc$preClinit()</span><br><span class="line">  &#123;</span><br><span class="line">    Factory localFactory = new Factory(&quot;Demo.java&quot;, Class.forName(&quot;Demo&quot;));ajc$tjp_0 = localFactory.makeSJP(&quot;method-execution&quot;, localFactory.makeMethodSig(&quot;9-main-Demo-[Ljava.lang.String;:-args:--void-&quot;), 17);ajc$tjp_1 = localFactory.makeSJP(&quot;method-execution&quot;, localFactory.makeMethodSig(&quot;0-foo-Demo-int:java.lang.Object:-i:o:--void-&quot;), 27);ajc$tjp_2 = localFactory.makeSJP(&quot;method-execution&quot;, localFactory.makeMethodSig(&quot;0-bar-Demo-java.lang.Integer:-j:--java.lang.String-&quot;), 31);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  private static final void main_aroundBody0(String[] args, JoinPoint paramJoinPoint)</span><br><span class="line">  &#123;</span><br><span class="line">    new Demo().go();</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  void go()</span><br><span class="line">  &#123;</span><br><span class="line">    GetInfo.ajc$cflowCounter$0.inc();</span><br><span class="line">    try</span><br><span class="line">    &#123;</span><br><span class="line">      d = new Demo();</span><br><span class="line">      d.foo(1, d);</span><br><span class="line">      System.out.println(d.bar(new Integer(3)));</span><br><span class="line">    &#125;</span><br><span class="line">    catch (Throwable localThrowable)</span><br><span class="line">    &#123;</span><br><span class="line">      GetInfo.ajc$cflowCounter$0.dec();throw localThrowable;</span><br><span class="line">    &#125;</span><br><span class="line">    GetInfo.ajc$cflowCounter$0.dec();</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  private static final void foo_aroundBody2(Demo ajc$this, int i, Object o, JoinPoint paramJoinPoint)</span><br><span class="line">  &#123;</span><br><span class="line">    System.out.println(&quot;Demo.foo(&quot; + i + &quot;, &quot; + o + &quot;)\n&quot;);</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  private static final Object main_aroundBody1$advice(String[] args, JoinPoint thisJoinPoint, GetInfo ajc$aspectInstance, AroundClosure ajc$aroundClosure, JoinPoint.StaticPart thisJoinPointStaticPart, JoinPoint thisJoinPoint)</span><br><span class="line">  &#123;</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$println(</span><br><span class="line">      &quot;Intercepted message: &quot; + thisJoinPointStaticPart.getSignature().getName());</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$println(&quot;in class: &quot; + </span><br><span class="line">      thisJoinPointStaticPart.getSignature().getDeclaringType().getName());</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$printParameters(thisJoinPoint);</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$println(&quot;Running original method: \n&quot;);</span><br><span class="line">    AroundClosure localAroundClosure = ajc$aroundClosure;main_aroundBody0(args, thisJoinPoint);Object result = null;</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$println(&quot;  result: &quot; + result);</span><br><span class="line">    return result;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  private static final Object foo_aroundBody3$advice(Demo ajc$this, int i, Object o, JoinPoint thisJoinPoint, GetInfo ajc$aspectInstance, AroundClosure ajc$aroundClosure, JoinPoint.StaticPart thisJoinPointStaticPart, JoinPoint thisJoinPoint)</span><br><span class="line">  &#123;</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$println(</span><br><span class="line">      &quot;Intercepted message: &quot; + thisJoinPointStaticPart.getSignature().getName());</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$println(&quot;in class: &quot; + </span><br><span class="line">      thisJoinPointStaticPart.getSignature().getDeclaringType().getName());</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$printParameters(thisJoinPoint);</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$println(&quot;Running original method: \n&quot;);</span><br><span class="line">    AroundClosure localAroundClosure = ajc$aroundClosure;foo_aroundBody2(ajc$this, i, o, thisJoinPoint);Object result = null;</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$println(&quot;  result: &quot; + result);</span><br><span class="line">    return result;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  private static final String bar_aroundBody4(Demo ajc$this, Integer j, JoinPoint paramJoinPoint)</span><br><span class="line">  &#123;</span><br><span class="line">    System.out.println(&quot;Demo.bar(&quot; + j + &quot;)\n&quot;);</span><br><span class="line">    return &quot;Demo.bar(&quot; + j + &quot;)&quot;;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  private static final Object bar_aroundBody5$advice(Demo ajc$this, Integer j, JoinPoint thisJoinPoint, GetInfo ajc$aspectInstance, AroundClosure ajc$aroundClosure, JoinPoint.StaticPart thisJoinPointStaticPart, JoinPoint thisJoinPoint)</span><br><span class="line">  &#123;</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$println(</span><br><span class="line">      &quot;Intercepted message: &quot; + thisJoinPointStaticPart.getSignature().getName());</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$println(&quot;in class: &quot; + </span><br><span class="line">      thisJoinPointStaticPart.getSignature().getDeclaringType().getName());</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$printParameters(thisJoinPoint);</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$println(&quot;Running original method: \n&quot;);</span><br><span class="line">    AroundClosure localAroundClosure = ajc$aroundClosure;Object result = bar_aroundBody4(ajc$this, j, thisJoinPoint);</span><br><span class="line">    GetInfo.ajc$inlineAccessMethod$GetInfo$GetInfo$println(&quot;  result: &quot; + result);</span><br><span class="line">    return result;</span><br><span class="line">  &#125;</span><br><span class="line">  </span><br><span class="line">  static &#123;&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>我们可以看到Demo.class文件不是由原来的Demo.java文件编译得到的,里面新增了好多内容–这个说明AspectJ在编译时自动编译得到了一个新类,这个新类增强了Demo.java类的功能。</p>
+<p>AspectJ实际类似于javac编译工具,我们刚才看到的GetInfo.java属于AspectJ的专有语法,它编译的目标跟javac一样的都是java class文件，只是源文件的语法是符合aspect语法的。AspectJ理解编译时期对源文件按照指定的描述（aspect语法文件）进行编译，得到进行切入后的字节码文件。</p>
+<p><span style="color:#63B8FF;font-size:17px">pointcut:</span>描述切面内容，可以理解为针对哪些方法，类，进行拦截，插入代码。<br><span style="color:#63B8FF;font-size:17px">around:</span>实际上拦截方法，这个注解可以同时拦截方法的执行前后，另外有before, after，顾名思义，表示方法执行前跟方法执行后拦截。proceed()代表原方法执行</p>
+<h1 id="0x03-动态代理"><a href="#0x03-动态代理" class="headerlink" title="0x03.动态代理"></a><span style="color:#436EEE;font-size:24px">0x03.动态代理</span></h1><h2 id="JDK原生动态代理"><a href="#JDK原生动态代理" class="headerlink" title="JDK原生动态代理"></a><span style="color:#436EEE;font-size:20px">JDK原生动态代理</span></h2><p>动态代理的话常用<span style="color:#63B8FF;font-size:16px">JDK原生动态代理和CGLIB动态代理</span>,首先我们来看下JDK原生动态代理的实现。<br>我们定义一个<span style="color:#63B8FF;font-size:16px">JDKDemo</span>接口,并<span style="color:#63B8FF;font-size:16px">JDKDemoImpl</span>实现。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">JDKDemo</span> &#123;</span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">go</span><span class="params">(String name)</span>;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JDKDemoImpl</span> <span class="keyword">implements</span> <span class="title class_">JDKDemo</span> &#123;</span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">go</span><span class="params">(String name)</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;go &quot;</span> + name);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>接下来,我们定义<span style="color:#63B8FF;font-size:16px">JDKDemoProxy</span>代理类实现<span style="color:#63B8FF;font-size:16px">JDKDemo</span>接口</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">JDKDemoProxy</span> <span class="keyword">implements</span> <span class="title class_">JDKDemo</span>&#123;</span><br><span class="line">    <span class="keyword">private</span>  JDKDemo jdkDemo;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">JDKDemoProxy</span><span class="params">()</span>&#123;</span><br><span class="line">        jdkDemo = <span class="keyword">new</span> <span class="title class_">JDKDemoImpl</span>();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">go</span><span class="params">(String name)</span> &#123;</span><br><span class="line">        before();</span><br><span class="line">        jdkDemo.go(name);</span><br><span class="line">        after();</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">before</span><span class="params">()</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;JDKDemoProxy Before&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">after</span><span class="params">()</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;JDKDemoProxy After&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>最后我们定义<span style="color:#63B8FF;font-size:16px">DynamicProxy</span>实现InvocationHandler，方法调用会被转发到该类的invoke()方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">DynamicProxy</span> <span class="keyword">implements</span> <span class="title class_">InvocationHandler</span>&#123;</span><br><span class="line">    <span class="keyword">private</span> Object target;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">DynamicProxy</span><span class="params">(Object target)</span>&#123;</span><br><span class="line">        <span class="built_in">this</span>.target=target;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@SuppressWarnings(&quot;unchecked&quot;)</span></span><br><span class="line">    <span class="keyword">public</span> &lt;T&gt; T <span class="title function_">getProxy</span><span class="params">()</span>&#123;</span><br><span class="line">        <span class="keyword">return</span> (T) Proxy.newProxyInstance(</span><br><span class="line">                target.getClass().getClassLoader(),</span><br><span class="line">                target.getClass().getInterfaces(),</span><br><span class="line">                <span class="built_in">this</span></span><br><span class="line">        );</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Object <span class="title function_">invoke</span><span class="params">(Object proxy, Method method, Object[] args)</span></span><br><span class="line">            <span class="keyword">throws</span> Throwable &#123;</span><br><span class="line">        before();</span><br><span class="line">        <span class="type">Object</span> <span class="variable">result</span> <span class="operator">=</span>method.invoke(target,args);</span><br><span class="line">        after();</span><br><span class="line">        <span class="keyword">return</span> result;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">before</span><span class="params">()</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;DynamicProxy Before&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">void</span> <span class="title function_">after</span><span class="params">()</span>&#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;DynamicProxy After&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>代码的关键是<span style="color:#EE2C2C;font-size:16px">Proxy.newProxyInstance(ClassLoader loader, Class&lt;?&gt;[] interfaces, InvocationHandler handler)</span>方法，该方法会根据指定的参数动态创建代理对象。三个参数的意义如下：</p>
+<ol>
+<li>ClassLoader loader 指定代理对象的类加载器；</li>
+<li>Class&lt;?&gt;[] interfaces，代理对象需要实现的接口，可以同时指定多个接口；</li>
+<li>InvocationHandler h，方法调用的实际处理者，代理对象的方法调用都会转发到这里</li>
+</ol>
+<p><span style="color:#836FFF;font-size:16px">newProxyInstance()</span>会返回一个实现了指定接口的代理对象，对该对象的所有方法调用都会转发给InvocationHandler.invoke()方法。invoke()方法里我们可以加入任何逻辑，比如修改方法参数，加入日志功能、安全检查功能等。</p>
+<p>最后我们来测试下动态代理的效果</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AOPTest</span> &#123;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">proxy</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">DynamicProxy</span> <span class="variable">dynamicProxy</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">DynamicProxy</span>(<span class="keyword">new</span> <span class="title class_">JDKDemoProxy</span>());</span><br><span class="line">        <span class="type">JDKDemo</span> <span class="variable">jdkDemo</span> <span class="operator">=</span> dynamicProxy.getProxy();</span><br><span class="line">        jdkDemo.go(<span class="string">&quot;banana&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行结果如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">DynamicProxy Before</span><br><span class="line">JDKDemoProxy Before</span><br><span class="line">go banana</span><br><span class="line">JDKDemoProxy After</span><br><span class="line">DynamicProxy After</span><br></pre></td></tr></table></figure>
+<p>Java动态代理为我们提供了非常灵活的代理机制，但Java动态代理是基于接口的，对象没有实现接口的情况无法使用。</p>
+<h2 id="CGLIB动态代理"><a href="#CGLIB动态代理" class="headerlink" title="CGLIB动态代理"></a><span style="color:#436EEE;font-size:20px">CGLIB动态代理</span></h2><p>JDK动态代理无法解决没有实现接口的情况,这种情况下就可以使用cglib。</p>
+<p>创建<span style="color:#63B8FF;font-size:16px">CglibDemo.java</span>,定义go方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CglibDemo</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">go</span><span class="params">()</span> &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;go cglib&quot;</span>);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><span style="color:#63B8FF;font-size:16px">CglibMethodInterceptor.java</span><br>实现一个MethodInterceptor，方法调用会被转发到该类的intercept()方法。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CglibMethodInterceptor</span> <span class="keyword">implements</span> <span class="title class_">MethodInterceptor</span>&#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Object <span class="title function_">intercept</span><span class="params">(Object o, Method method, Object[] objects, MethodProxy methodProxy)</span> <span class="keyword">throws</span> Throwable &#123;</span><br><span class="line">        System.out.println(<span class="string">&quot;Before:&quot;</span>+method.getName());</span><br><span class="line">        <span class="type">Object</span> <span class="variable">object</span> <span class="operator">=</span> methodProxy.invokeSuper(o, objects);</span><br><span class="line">        System.out.println(<span class="string">&quot;After:&quot;</span>+method.getName());</span><br><span class="line">        <span class="keyword">return</span> object;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><span style="color:#76EEC6;font-size:16px">CGLIG中MethodInterceptor的作用跟JDK代理中的InvocationHandler</span>很类似，都是方法调用的中转站。</p>
+<p><span style="color:#63B8FF;font-size:16px">AOPTest.java</span></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AOPTest</span> &#123;</span><br><span class="line">    <span class="meta">@Test</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">cglib</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="type">Enhancer</span> <span class="variable">enhancer</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Enhancer</span>();</span><br><span class="line">        enhancer.setSuperclass(CglibDemo.class);</span><br><span class="line">        enhancer.setCallback(<span class="keyword">new</span> <span class="title class_">CglibMethodInterceptor</span>());</span><br><span class="line">        <span class="type">CglibDemo</span> <span class="variable">cglibDemo</span> <span class="operator">=</span> (CglibDemo)enhancer.create();</span><br><span class="line">        cglibDemo.go();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><span style="color:#EE2C2C;font-size:16px">Enhancer是CGlib的字节码增强器</span>。代理类对象是由Enhancer类创建的,可以很方便的对类进行拓展。<br>通过CGLIB的Enhancer来指定要代理的目标对象、实际处理代理逻辑的对象，最终通过<span style="color:#76EEC6;font-size:16px">调用create()方法得到代理对象</span>，对这个对象所有<span style="color:#EE2C2C;font-size:16px">非final方法</span>(<span style="color:#C1C1C1;font-size:16px">CGLIB是通过继承实现代理,无法处理final</span>)的调用都会转发给MethodInterceptor.intercept()方法，在intercept()方法里我们可以加入任何逻辑，比如修改方法参数，加入日志功能、安全检查功能等；通过调用MethodProxy.invokeSuper()方法，我们将调用转发给原始对象。</p>
+<p><span style="color:#EE2C2C;font-size:16px">Spring AOP</span>的动态代理也是基于CGlib,在每次运行时动态的增强，生成AOP代理对象，区别在于生成AOP代理对象的时机不同，相对来说AspectJ的静态代理方式具有更好的性能，但是AspectJ需要特定的编译器进行处理，而Spring AOP则无需特定的编译器处理。</p>
+<h1 id="0x01-参考链接"><a href="#0x01-参考链接" class="headerlink" title="0x01.参考链接"></a><span style="color:#436EEE;font-size:24px">0x01.参考链接</span></h1><p><a target="_blank" rel="noopener" href="http://www.eclipse.org/aspectj">1. http://www.eclipse.org/aspectj</a><br><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Aspect-oriented_programming">2. https://en.wikipedia.org/wiki/Aspect-oriented_programming</a><br><a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/7/docs/api/java/lang/reflect/Proxy.html">3. https://docs.oracle.com/javase/7/docs/api/java/lang/reflect/Proxy.html</a><br><a target="_blank" rel="noopener" href="https://github.com/cglib/cglib">4. https://github.com/cglib/cglib</a><br><a target="_blank" rel="noopener" href="https://github.com/cglib/cglib/wiki/How-To#access-the-generated-byte-array-directly">5. https://github.com/cglib/cglib/wiki/How-To#access-the-generated-byte-array-directly</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/08/12/4.javac%20compiler-basis/" rel="next" title="初窥javac编译器">
+                <i class="fa fa-chevron-left"></i> 初窥javac编译器
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/05/22/6.usercenter/" rel="prev" title="(重构)usercenter--用户中心rpc系统">
+                (重构)usercenter--用户中心rpc系统 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">标签</span>
+                
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#0x01-AOP%E7%AE%80%E4%BB%8B"><span class="nav-number">1.</span> <span class="nav-text">0x01.AOP简介</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFAOP"><span class="nav-number">1.1.</span> <span class="nav-text">什么是AOP</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#AOP%E7%9A%84%E4%BD%9C%E7%94%A8%E6%98%AF%E4%BB%80%E4%B9%88"><span class="nav-number">1.2.</span> <span class="nav-text">AOP的作用是什么</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x02-%E9%9D%99%E6%80%81%E4%BB%A3%E7%90%86"><span class="nav-number">2.</span> <span class="nav-text">0x02.静态代理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#AspectJ"><span class="nav-number">2.1.</span> <span class="nav-text">AspectJ</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x03-%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86"><span class="nav-number">3.</span> <span class="nav-text">0x03.动态代理</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#JDK%E5%8E%9F%E7%94%9F%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86"><span class="nav-number">3.1.</span> <span class="nav-text">JDK原生动态代理</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#CGLIB%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86"><span class="nav-number">3.2.</span> <span class="nav-text">CGLIB动态代理</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x01-%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5"><span class="nav-number">4.</span> <span class="nav-text">0x01.参考链接</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">liyan</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

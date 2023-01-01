@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next muse use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="rpc 重构 java," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="0x0001 前言诞生背景随着公司的业务的慢慢扩展,公司内部开始发展出很多套系统,包括Medical(医疗系统)、Jkys-pt(用户系统)、ChatService(聊天系统)等等众多的系统,并且每个系统都或多或少会调用user信息。之前的调用方式是各个系统各自连接数据库进行增删改查,如果其中某个系统A需要user表增加一个信息的话就对表增加一个字段进行扩展。久而久之,user表开始十分庞大。造成">
+<meta property="og:type" content="article">
+<meta property="og:title" content="(重构)usercenter--用户中心rpc系统">
+<meta property="og:url" content="http://www.antwhy.com/2017/05/22/6.usercenter/index.html">
+<meta property="og:site_name" content="AntWhy">
+<meta property="og:description" content="0x0001 前言诞生背景随着公司的业务的慢慢扩展,公司内部开始发展出很多套系统,包括Medical(医疗系统)、Jkys-pt(用户系统)、ChatService(聊天系统)等等众多的系统,并且每个系统都或多或少会调用user信息。之前的调用方式是各个系统各自连接数据库进行增删改查,如果其中某个系统A需要user表增加一个信息的话就对表增加一个字段进行扩展。久而久之,user表开始十分庞大。造成">
+<meta property="og:locale">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/3b3K1m370G3M0f2w3O1L/Jietu20180126-144352.png?v=35d25ecc">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/0u0A2i1Z0k442O2U3s1W/Jietu20180129-185430.png?v=aa281320">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/3u0u1Z0k1k1k3O123I2x/Jietu20180129-185414.png?v=13332192">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/3x3A3f3j1J0K1X2N0D2C/Jietu20180130-175053.png?v=e7f58c11">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/2I1s293U0q2D2A2E163f/Jietu20180130-175316.png?v=6e6fc66c">
+<meta property="og:image" content="https://d2ffutrenqvap3.cloudfront.net/items/3I0M3Y272N1U2G173a3Z/Jietu20180130-182215.png?v=01c84d17">
+<meta property="article:published_time" content="2017-05-22T02:09:53.000Z">
+<meta property="article:modified_time" content="2018-02-25T03:09:33.000Z">
+<meta property="article:author" content="liyan">
+<meta property="article:tag" content="rpc 重构 java">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://d2ffutrenqvap3.cloudfront.net/items/3b3K1m370G3M0f2w3O1L/Jietu20180126-144352.png?v=35d25ecc">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '',
+    scheme: 'Muse',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://www.antwhy.com/2017/05/22/6.usercenter/"/>
+
+
+
+
+
+  <title>(重构)usercenter--用户中心rpc系统 | AntWhy</title>
+  
+
+
+
+
+
+
+
+
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">AntWhy</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Server Engineer</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/%20" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://www.antwhy.com/2017/05/22/6.usercenter/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="AntWhy">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">(重构)usercenter--用户中心rpc系统</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-05-22T10:09:53+08:00">
+                2017-05-22
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="0x0001-前言"><a href="#0x0001-前言" class="headerlink" title="0x0001 前言"></a>0x0001 前言</h1><h2 id="诞生背景"><a href="#诞生背景" class="headerlink" title="诞生背景"></a>诞生背景</h2><p>随着公司的业务的慢慢扩展,公司内部开始发展出很多套系统,包括Medical(医疗系统)、Jkys-pt(用户系统)、ChatService(聊天系统)等等众多的系统,并且每个系统都或多或少会调用user信息。之前的调用方式是各个系统各自连接数据库进行增删改查,如果其中某个系统A需要user表增加一个信息的话就对表增加一个字段进行扩展。久而久之,user表开始十分庞大。造成很多弊端。</p>
+<ol>
+<li>因为user信息调用频繁,公司所有系统独自对user进行增删改查浪费数据库资源。</li>
+<li>很多系统并未做缓存,造成重复查询。但是如果单独做缓存的话可能造成数据更新不及时。</li>
+<li>某些系统需要大量的用户信息查询,在没有缓存情况下,造成独占数据库资源,使得其他系统处于等待状态或者直接异常,造成系统不可用。</li>
+<li>各个系统或多或少对user表进行扩展字段,造成检索变慢,扩展的字段只对其中一个或者某几个系统生效,造成其他系统的字段冗余或者字段很多null。</li>
+<li>随着业务扩展,user信息还包含其他例如血糖,用户标签等等数据,查询用户信息变成了多表join,造成效率低下。</li>
+</ol>
+<p>基于以上诸多的问题,急需一个user管理中心,提供rpc接口,直接让其他系统调用,用户中心来解决上述的问题。<span style="color:#00FFFF;font-size:16px">UserCenter</span>就应运而生,顾名思义<span style="color:#CD00CD;font-size:16px">用户中心</span>,作为一个RPC系统,提供用户相关信息的查询包括:id、年龄、姓名、电话、居住地、头像、血糖等<span style="color:#00FFFF;font-size:16px">用户自身相关信息的增删改查</span>。</p>
+<h2 id="计划"><a href="#计划" class="headerlink" title="计划"></a>计划</h2><p>之前的系统已经大量耦合user信息,所以必须完成用户中心管理rpc后,移除所有系统单独调用user,进行无缝的过渡到usercenter中。<br><img src="https://d2ffutrenqvap3.cloudfront.net/items/3b3K1m370G3M0f2w3O1L/Jietu20180126-144352.png?v=35d25ecc"><br>先维持旧版系统,然后构建完成usercenter后,找个时间数据迁移到新版本,然后进行<span style="color:#436EEE;font-size:16px">新老系统双写</span>,期间进行数据校验,运行一段时间,修复新系统的问题,定期查看数据的正常性。一段时间过后,新系统稳定后,可以清空新系统数据,重新做一次数据迁移,然后再双写一段时间,切换下老系统,新系统正式上线。</p>
+<h1 id="0x0002-UserCenter"><a href="#0x0002-UserCenter" class="headerlink" title="0x0002 UserCenter"></a>0x0002 UserCenter</h1><p>首先我们先构造好usercenter系统,并且需要解决之前版本提到的上述问题。上述提到的5个问题,我们需要统一的管理user信息,只需提供rpc接口供其他系统直接调用,隐藏实现细节。为了详细说明,下面将系统分为读、写、监控三部分来讲解。</p>
+<h2 id="读-流程"><a href="#读-流程" class="headerlink" title="读 流程"></a>读 流程</h2><p><img src="https://d2ffutrenqvap3.cloudfront.net/items/0u0A2i1Z0k442O2U3s1W/Jietu20180129-185430.png?v=aa281320"><br><span style="color:#3CB371;font-size:16px">读 流程</span>中<span style="color:#FF7F00;font-size:16px">Client端</span>发出read ‘key A’指令,直接获取value值,client不需要关心具体实现过程,只需要调用相应的函数。而对于数据的返回,服务端有三种模式。</p>
+<p><strong>1.本地缓存</strong><br>读流程中,</span>中<span style="color:#9BE95A;font-size:16px">绿色的线</span>,当client读取’key A’值时候,先去判断本地缓存中是否有值,如果有的话直接返回本地缓存中的值。缓存的实现使用<a target="_blank" rel="noopener" href="http://blog.csdn.net/jingqiang521/article/details/48175977">Ehcache</a>实现,该缓存组件支持内存和磁盘的缓存,支持LRU、LFU和FIFO多种淘汰算法,支持分布式的Cache组件。同时它也提供基于Filter的cache,该Filter可以缓存响应的内容并采用Gzip压缩提高响应速度。</p>
+<p><strong>2.service端redis缓存</strong><br>流程中<span style="color:#E9A85A;font-size:16px">橙色的线</span>,当read击穿了本地的caches时,该请求将首先访问<a target="_blank" rel="noopener" href="http://blog.csdn.net/liqingtx/article/details/60330555">redis</a>中的缓存,如果缓存中有值,则进行返回。值返回到客户端,更新本地cache中的值。<br>例如,通过</span>中<span style="color:#5A78E9;font-size:16px">user id访问user infomation</span>时,代码中client的<span style="color:#C0FF3E;font-size:16px">BaseUserProxy类</span>中提供了<span style="color:#C0FF3E;font-size:16px">getBaseUserById</span>方法。而service端则<span style="color:#C0FF3E;font-size:16px">BaseUserInfoReadServiceImpl类</span>实现了该interface。代码如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> String <span class="title function_">getBaseUserById</span><span class="params">(Long userId)</span> &#123;</span><br><span class="line">		Assert.notNull(userId);</span><br><span class="line">		Result&lt;BaseUserInfo&gt; result = <span class="keyword">new</span> <span class="title class_">Result</span>&lt;&gt;();</span><br><span class="line">		<span class="type">String</span> <span class="variable">baseUserInfoStr</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">		<span class="keyword">try</span> &#123;</span><br><span class="line">		   <span class="comment">//首先访问redis根据userId获取缓存</span></span><br><span class="line">			baseUserInfoStr = redisService.get(getCacheKey(userId));</span><br><span class="line">			</span><br><span class="line">			<span class="keyword">if</span> (StringUtils.isNoneBlank(baseUserInfoStr)) &#123;</span><br><span class="line">				<span class="comment">//如果缓存中有值</span></span><br><span class="line">				cacheAop.gethitRecoder(<span class="built_in">this</span>.getClass()).incrementAndGet();</span><br><span class="line">				</span><br><span class="line">				<span class="keyword">if</span>(!<span class="string">&quot;&#123;&#125;&quot;</span>.equals(baseUserInfoStr))&#123; <span class="comment">//空对象不返回结果</span></span><br><span class="line">					<span class="type">BaseUserInfo</span> <span class="variable">userInfo</span> <span class="operator">=</span> JSON.parseObject(baseUserInfoStr, BaseUserInfo.class);</span><br><span class="line">					result.setResult(userInfo);</span><br><span class="line">					cacheAop.getCacheLoger().info(<span class="string">&quot;getBaseUserById 获取缓存: userId -&gt; &#123;&#125;, , 命中!&quot;</span>, userId);</span><br><span class="line">				&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">					cacheAop.getCacheLoger().info(<span class="string">&quot;getBaseUserById 缓存的是空对象,返回null: userId -&gt; &#123;&#125;, , 命中!&quot;</span>, userId);</span><br><span class="line">				&#125;</span><br><span class="line">				<span class="comment">//返回redis中缓存值</span></span><br><span class="line">				result.setSuccess(<span class="literal">true</span>);</span><br><span class="line">			&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">				cacheAop.getCacheLoger().info(<span class="string">&quot;getBaseUserById 获取缓存: userId -&gt; &#123;&#125;, 未命中!，&quot;</span>, userId);</span><br><span class="line">				cacheAop.getunHitRecoder(<span class="built_in">this</span>.getClass()).incrementAndGet();</span><br><span class="line">            <span class="comment">//缓存中没有值,进行查库</span></span><br><span class="line">				<span class="type">BaseUserInfo</span> <span class="variable">userInfo</span> <span class="operator">=</span> userInfoMapper.selectById(userId);</span><br><span class="line">				result.setResult(userInfo);</span><br><span class="line">				<span class="comment">//返回数据库中值</span></span><br><span class="line">				result.setSuccess(<span class="literal">true</span>);</span><br><span class="line">				</span><br><span class="line">				<span class="type">String</span> <span class="variable">info</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">				<span class="keyword">if</span> (userInfo != <span class="literal">null</span>) &#123;</span><br><span class="line">				   <span class="comment">//数据库查询到值后,将值设置到redis中</span></span><br><span class="line">					redisService.set(getCacheKey(userId), JSON.toJSONString(userInfo), <span class="number">60</span> * <span class="number">60</span> * <span class="number">24</span>);</span><br><span class="line">					info= <span class="string">&quot;getBaseUserById 查库成功,&quot;</span> + userId + JSON.toJSONString(userInfo) + <span class="string">&quot;,写入redis缓存.&quot;</span>;</span><br><span class="line">				&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">					redisService.set(getCacheKey(userId), JSON.toJSONString(<span class="keyword">new</span> <span class="title class_">BaseUserInfo</span>()), <span class="number">60</span> * <span class="number">60</span> * <span class="number">24</span>);</span><br><span class="line">					info= <span class="string">&quot;getBaseUserById 数据库未查到相关数据,&quot;</span>+userId+<span class="string">&quot;:，缓存一个空对象&quot;</span>;</span><br><span class="line">				&#125;</span><br><span class="line">					</span><br><span class="line">				cacheAop.getCacheLoger().info(info);</span><br><span class="line">			&#125;</span><br><span class="line">		&#125; <span class="keyword">catch</span> (Throwable e) &#123;</span><br><span class="line">			logger.error(<span class="string">&quot;getBaseUserById error,&quot;</span> + baseUserInfoStr +<span class="string">&quot;,userId&quot;</span> + userId, e);</span><br><span class="line">			result.setCode(ResultCode.RES_999);</span><br><span class="line">			result.setMessage(e.getMessage());</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> JSON.toJSONString(result);</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
+<p>这其中需要注意一点的时,redis的缓存是可以设置有效时间,如下<span style="color:#5A78E9;font-size:16px">RedisService类中set方法,核心是Jedisd的setex方法</span></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"> <span class="comment">/**</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> key</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> value</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> timeout	秒</span></span><br><span class="line"><span class="comment"> * <span class="doctag">@param</span> unit</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">set</span><span class="params">(<span class="keyword">final</span> String key, <span class="keyword">final</span> String value, <span class="type">int</span> secondsTimeout)</span> &#123;</span><br><span class="line">	<span class="keyword">try</span> &#123;</span><br><span class="line">		<span class="type">long</span> <span class="variable">befor</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">		execute(<span class="keyword">new</span> <span class="title class_">RedisCallback</span>() &#123;</span><br><span class="line">			<span class="keyword">public</span> String <span class="title function_">doInRedis</span><span class="params">(Jedis connection)</span> <span class="keyword">throws</span> DataAccessException &#123;</span><br><span class="line">				connection.setex(key.getBytes(), secondsTimeout, value.getBytes());</span><br><span class="line">				<span class="keyword">return</span> <span class="literal">null</span>;</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;);</span><br><span class="line">		<span class="type">long</span> <span class="variable">exeTime</span> <span class="operator">=</span> System.currentTimeMillis() - befor;</span><br><span class="line">		<span class="keyword">if</span> (exeTime &gt; TIEM) &#123;</span><br><span class="line">			moniter.error(String.format(<span class="string">&quot;执行redis,set方法，执行key:%s，当前执行时间%s毫秒,超过设定的目标超时阀值%s毫秒&quot;</span>, key, exeTime, TIEM));</span><br><span class="line">		&#125;</span><br><span class="line">	&#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">		logger.error(<span class="string">&quot;RedisService.get put,key&quot;</span> + key, e);</span><br><span class="line">		<span class="keyword">throw</span> e;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><span style="color:#FF00FF;font-size:16px">关于redis的过期策略,懒汉式删除+定期删除</span><br>懒汉式删除流程：在进行get或setex等操作时，先检查key是否过期；若过期，删除key，然后执行相应操作；若没过期，直接执行相应操作；定期删除流程（简单而言，对指定个数个库的每一个库随机删除小于等于指定个数个过期key）：遍历每个数据库（就是redis.conf中配置的”database”数量，默认为16）<br>检查当前库中的指定个数个key（默认是每个库检查20个key，注意相当于该循环执行20次，循环体是下边的描述）如果当前库中没有一个key设置了过期时间，直接执行下一个库的遍历随机获取一个设置了过期时间key，检查该key是否过期，如果过期，删除key判断定期删除操作是否已经达到指定时长，若已经达到，直接退出定期删除。<br>对于定期删除，在程序中有一个全局变量current_db来记录下一个将要遍历的库，假设有16个库，我们这一次定期删除遍历了10个，那此时的current_db就是11，下一次定期删除就从第11个库开始遍历，假设current_db等于15了，那么之后遍历就再从0号库开始（此时current_db&#x3D;&#x3D;0）</p>
+<p><strong>3.击穿缓存,读取数据库</strong><br>流程中<span style="color:#5A78E9;font-size:16px">蓝色的线</span>,当请求击穿redis,到数据库层时,进行数据库查询,查询到的值将进行返回,并且更新redis中数据,再到client端更新本地cache中的数据。数据库部分使用<a target="_blank" rel="noopener" href="http://www.mybatis.org/mybatis-3/">mybatis</a>,开启一级缓存,设置成STATEMENT,关闭二级缓存,这样有利于分布式部署。<a target="_blank" rel="noopener" href="http://mp.weixin.qq.com/s?__biz=MjM5NjQ5MTI5OA==&mid=2651747419&idx=2&sn=a7c25803179504b7232c0d6777fe4831&chksm=bd12ad168a65240095187adf72f82d0c7f2fcff52987e97fa385065eb63ff843e45dc896189e&mpshare=1&scene=23&srcid=0130qLoRvYnaCYhbHSXsyywx#rd">mybatis关于缓存参考</a></p>
+<h2 id="写-流程"><a href="#写-流程" class="headerlink" title="写 流程"></a>写 流程</h2><p><img src="https://d2ffutrenqvap3.cloudfront.net/items/3u0u1Z0k1k1k3O123I2x/Jietu20180129-185414.png?v=13332192"></p>
+<p>上图中可以看到,进行<span style="color:#FF00FF;font-size:16px">Create Delete Update (简称CUD)</span>操作时,直接进行数据库操作CUD ‘key A’的值,操作成功后,首先删除缓存<span style="color:#436EEE;font-size:16px">Redis</span>中的’key A’的值,然后发送<span style="color:#436EEE;font-size:16px">Kafka</span>消息,删除’key A’的值,client端监听kafka消息,获取到通知后,delete掉本地缓存中’key A’。<br>一套流程下来,就完成了’key A’的CUD操作,这里有人可能会问,<span style="color:#436EEE;font-size:16px">为什么不对缓存中值进行CUD操作,而是直接delete呢?</span>是因为可能在极端情况下,比如你对’key A’的值进行CUD操作,前后两次,成功后进行缓存修改,但是由于网络不好,第一次CUD缓存中’key A’的操作晚于第二次操作,就造成了缓存中脏数据。<br>实现代码可以参照service端中<span style="color:#C0FF3E;font-size:16px">BaseUserInfoWriteServiceImpl类</span>的update方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> String <span class="title function_">update</span><span class="params">(BaseUserInfo user)</span> &#123;</span><br><span class="line">    	Result&lt;Boolean&gt; result = <span class="keyword">new</span> <span class="title class_">Result</span>&lt;Boolean&gt;();</span><br><span class="line">		<span class="keyword">try</span> &#123;</span><br><span class="line">	    	<span class="keyword">if</span>(StringUtils.isBlank(user.getSalt())) &#123;<span class="comment">//设置唯一秘钥</span></span><br><span class="line">	    		user.setSalt(SaltUtil.genSalt(<span class="number">6</span>));</span><br><span class="line">			&#125;</span><br><span class="line">	    	user.setUcId(UniqueUtil.getUniqueId(user.getGmtCreate(), user.getSalt()));</span><br><span class="line">	        <span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> userWriteMapper.update(user);</span><br><span class="line">        </span><br><span class="line">	        redisService.delete(getCacheKey(user.getId()));<span class="comment">//清除redis缓存	</span></span><br><span class="line">	        cacheAop.getCacheLoger().info(<span class="string">&quot;update 缓存清除成功: ,userId:&quot;</span> + user.getId());</span><br><span class="line">			asynMessageService.sendBaseUserUpdateMessge(user.getId().toString(), Option.OPT_UPDATE);<span class="comment">//kafka send notify 清空client缓存</span></span><br><span class="line">			</span><br><span class="line">	        result.setSuccess(<span class="literal">true</span>);</span><br><span class="line">	        result.setResult(i &gt; <span class="number">0</span> ? <span class="literal">true</span> : <span class="literal">false</span>);</span><br><span class="line">	        <span class="keyword">return</span> JSON.toJSONString(result);</span><br><span class="line">		&#125;<span class="keyword">catch</span>(Exception e) &#123;</span><br><span class="line">			logger.error(<span class="string">&quot;updateUserExtra error&quot;</span> +<span class="string">&quot;userId&quot;</span>+  user.getId(),e);</span><br><span class="line">			result.setCode(ResultCode.RES_999);</span><br><span class="line">			result.setMessage(<span class="string">&quot;系统错误&quot;</span>);</span><br><span class="line">		&#125;</span><br><span class="line">		<span class="keyword">return</span> JSON.toJSONString(result);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="监控"><a href="#监控" class="headerlink" title="监控"></a>监控</h2><p><span style="color:#FFD700;font-size:16px">监控</span>模块负责监控系统的接口调用情况,内存读取情况等一些信息。包括两个模块<br><span style="color:#5CACEE;font-size:16px">A .接口调用监控MoniterAop</span>模块功能</p>
+<ol>
+<li>最近1分钟每个接口的调用次数。</li>
+<li>最近10分钟每个接口的调用次数。 </li>
+<li>某个方法调用超过500ms的情况。</li>
+</ol>
+<p>例如3功能代码情况如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//AOP 监控service中ServiceImpl*等方法</span></span><br><span class="line"><span class="meta">@Around(&quot;execution(* com.jkys.usercenter.service.*ServiceImpl.*(..))&quot;)</span></span><br><span class="line"><span class="keyword">public</span> Object <span class="title function_">doAround</span><span class="params">(ProceedingJoinPoint pjp)</span> <span class="keyword">throws</span> Throwable &#123;</span><br><span class="line">    <span class="comment">//获取方法名</span></span><br><span class="line">    <span class="type">String</span> <span class="variable">methodName</span> <span class="operator">=</span> pjp.getTarget().getClass().getName() + <span class="string">&quot;.&quot;</span> + pjp.getSignature().getName();</span><br><span class="line">    <span class="comment">//根据方法名转换成ExecuteRecord对象,存入collect(Map)中</span></span><br><span class="line">    <span class="comment">//collect为了统计10分钟接口调用情况</span></span><br><span class="line">    <span class="type">ExecuteRecord</span> <span class="variable">ato</span> <span class="operator">=</span> collect.get(methodName);</span><br><span class="line">    <span class="keyword">if</span> (ato == <span class="literal">null</span>) &#123;</span><br><span class="line">        ato = <span class="keyword">new</span> <span class="title class_">ExecuteRecord</span>(methodName);</span><br><span class="line">        collect.put(methodName, ato);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//minutes_5(map)为了统计1分钟接口调用情况</span></span><br><span class="line">    <span class="type">ExecuteRecord</span> <span class="variable">m5</span> <span class="operator">=</span> minutes_5.get(methodName);</span><br><span class="line">    <span class="keyword">if</span> (m5 == <span class="literal">null</span>) &#123;</span><br><span class="line">        m5 = <span class="keyword">new</span> <span class="title class_">ExecuteRecord</span>(methodName);</span><br><span class="line">        minutes_5.put(methodName, m5);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//记录method调用前时间</span></span><br><span class="line">    <span class="type">long</span> <span class="variable">befor</span> <span class="operator">=</span> System.currentTimeMillis();</span><br><span class="line">    <span class="type">Object</span> <span class="variable">result</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        <span class="comment">//执行method</span></span><br><span class="line">        result = pjp.proceed();</span><br><span class="line">    &#125; <span class="keyword">catch</span> (Exception e) &#123;</span><br><span class="line">        bLogger.info(JSON.toJSONString(pjp.getArgs()));</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">RuntimeException</span>(e);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="comment">//调用method需要时间</span></span><br><span class="line">    <span class="type">long</span> <span class="variable">exeTime</span> <span class="operator">=</span> System.currentTimeMillis() - befor;</span><br><span class="line">    <span class="keyword">if</span> (!(pjp.getTarget() <span class="keyword">instanceof</span> UserDataInitServiceImpl)) &#123;</span><br><span class="line">        ato.increment(exeTime);</span><br><span class="line">        m5.increment(exeTime);</span><br><span class="line">        <span class="comment">//如果超过500ms则记录下来</span></span><br><span class="line">        <span class="keyword">if</span> (exeTime &gt; TIEM) &#123;</span><br><span class="line">            logger.info(String.format(<span class="string">&quot;执行方法%s，执行参数%s，当前执行时间%s ms,超过设定的目标超时阀值%s ms&quot;</span>, methodName,</span><br><span class="line">                    JSON.toJSONString(pjp.getArgs()), exeTime, TIEM));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> result;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><span style="color:#5CACEE;font-size:16px">B .缓存调用监控CacheAop</span>模块功能</p>
+<ol>
+<li>最近5分钟缓存命中情况</li>
+<li>最近5分钟缓存未命中情况</li>
+</ol>
+<h2 id="数据库方面"><a href="#数据库方面" class="headerlink" title="数据库方面"></a>数据库方面</h2><p>数据库设计上,在mysql上建立<span style="color:#5CACEE;font-size:16px">base_user_info</span>主表,通用字段全都在该表中,MongoDB上建立<span style="color:#5CACEE;font-size:16px">extra_user_info</span>表,主要用于不同系统的扩展字段。将扩展表建立在MongoDB上有利于字段的扩建,而且不会像mysql上存在某个系统使用该字段的话, 其他系统大量null的问题。<br>表信息如下<br><img src="https://d2ffutrenqvap3.cloudfront.net/items/3x3A3f3j1J0K1X2N0D2C/Jietu20180130-175053.png?v=e7f58c11"><br><img src="https://d2ffutrenqvap3.cloudfront.net/items/2I1s293U0q2D2A2E163f/Jietu20180130-175316.png?v=6e6fc66c"></p>
+<p>mysql库中有个两张比较特别的表<span style="color:#5CACEE;font-size:16px">tag_user和user_tag</span>,这两张表做过<span style="color:#5CACEE;font-size:16px">分表处理</span>。例如user_tag表分表逻辑如下:</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">protected</span> Long modelNumber;</span><br><span class="line"></span><br><span class="line">    &#123;</span><br><span class="line">        modelNumber = <span class="number">16L</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/**</span></span><br><span class="line"><span class="comment">     * 分表逻辑(取模)</span></span><br><span class="line"><span class="comment">     *</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> baseTableName 表名</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> params        包含PKId</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@param</span> mapperId      mapper方t法名</span></span><br><span class="line"><span class="comment">     * <span class="doctag">@return</span> 分表名</span></span><br><span class="line"><span class="comment">     */</span></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">getTargetTableName</span><span class="params">(String baseTableName, Object params, String mapperId)</span> &#123;</span><br><span class="line">        Long PKId;</span><br><span class="line">        <span class="type">HashMap</span> <span class="variable">paramsMap</span> <span class="operator">=</span> (HashMap) params;</span><br><span class="line">        <span class="keyword">if</span> (paramsMap.containsKey(<span class="string">&quot;PKId&quot;</span>)) &#123;</span><br><span class="line">            PKId = Long.parseLong(paramsMap.get(<span class="string">&quot;PKId&quot;</span>).toString());</span><br><span class="line">        &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">            <span class="keyword">return</span> baseTableName;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> baseTableName + <span class="string">&quot;_&quot;</span> + (PKId % modelNumber)+<span class="string">&quot; &quot;</span>;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p><span style="color:#6959CD;font-size:16px">为何有了一张user_tag还需要建立一张tag_user?</span><br>因为根据分表逻辑,user_tag表一共建立了16张, 也就是如果给出用户uid就可以根据取模逻辑直接查找一张表就好了,这样复杂度减到 $1&#x2F;16$。再建立一张tag_user表,根据tag查找user,输入tag只需要在4张表中的其中一张查,也降低了复杂度。这样通过分表逻辑快速定位用户tag或者通过tag快速查找用户。</p>
+<h1 id="0x0003-效果"><a href="#0x0003-效果" class="headerlink" title="0x0003 效果"></a>0x0003 效果</h1><p>目前usercenter系统完成后,其他系统只需要调用相应接口就能获取数据,无需关心缓存,数据库等等,并且可以通过日志监控系统健康情况。可看到如下日志:<br><img src="https://d2ffutrenqvap3.cloudfront.net/items/3I0M3Y272N1U2G173a3Z/Jietu20180130-182215.png?v=01c84d17"></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/rpc-%E9%87%8D%E6%9E%84-java/" rel="tag"># rpc 重构 java</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/02/23/9.aspectj-analyze/" rel="next" title="AOP静态、动态代理">
+                <i class="fa fa-chevron-left"></i> AOP静态、动态代理
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/06/22/8.mybatis-analyze/" rel="prev" title="mybatis浅析">
+                mybatis浅析 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name"></p>
+              <p class="site-description motion-element" itemprop="description"></p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/%20%7C%7C%20archive">
+              
+                  <span class="site-state-item-count">15</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">标签</span>
+                
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#0x0001-%E5%89%8D%E8%A8%80"><span class="nav-number">1.</span> <span class="nav-text">0x0001 前言</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%9E%E7%94%9F%E8%83%8C%E6%99%AF"><span class="nav-number">1.1.</span> <span class="nav-text">诞生背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AE%A1%E5%88%92"><span class="nav-number">1.2.</span> <span class="nav-text">计划</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x0002-UserCenter"><span class="nav-number">2.</span> <span class="nav-text">0x0002 UserCenter</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%AF%BB-%E6%B5%81%E7%A8%8B"><span class="nav-number">2.1.</span> <span class="nav-text">读 流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%86%99-%E6%B5%81%E7%A8%8B"><span class="nav-number">2.2.</span> <span class="nav-text">写 流程</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9B%91%E6%8E%A7"><span class="nav-number">2.3.</span> <span class="nav-text">监控</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E6%96%B9%E9%9D%A2"><span class="nav-number">2.4.</span> <span class="nav-text">数据库方面</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#0x0003-%E6%95%88%E6%9E%9C"><span class="nav-number">3.</span> <span class="nav-text">0x0003 效果</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2023</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">liyan</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Muse</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
